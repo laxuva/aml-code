@@ -18,7 +18,7 @@ class DownSamplingBlock(torch.nn.Module):
             self.down_sampling_layer = torch.nn.Sequential(
                 torch.nn.Conv2d(out_features, out_features, kernel_size=3, padding=1, stride=2),
                 torch.nn.ReLU()
-        )
+            )
 
     def forward(self, x):
         x_hat = self.forward_layers.forward(x)
