@@ -48,3 +48,6 @@ class UNetTrainer(pl.LightningModule):
         loss = self.loss_function(y_pred, y)
 
         return loss.cpu().detach().item()
+
+    def get_model(self):
+        return self.model

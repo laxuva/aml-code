@@ -25,7 +25,6 @@ def train(config: Dict[str, Any]):
 
     model = UNetTrainer(config["model"], train_config, device=device)
     lr_scheduler = model.lr_scheduler
-
     epoch_train_loss = list()
     epoch_val_loss = list()
     best_val_loss = np.inf
@@ -55,7 +54,7 @@ def train(config: Dict[str, Any]):
         if epoch_val_loss[-1] < best_val_loss:
             best_val_loss = epoch_val_loss[-1]
             epochs_without_improvement = 0
-            torch.save(model.state_dict(), out_path.joinpath("best_model.pt"))
+            torch.save(model.get_model().state_dict(), out_path.joinpath("best_model.pt"))
         else:
             epochs_without_improvement += 1
 
@@ -68,7 +67,7 @@ def train(config: Dict[str, Any]):
             "val_loss": epoch_val_loss
         }))
 
-    torch.save(model.state_dict(), out_path.joinpath("final_model.pt"))
+    torch.save(model.get_model().state_dict(), out_path.joinpath("final_model.pt"))
 
 
 if __name__ == '__main__':
