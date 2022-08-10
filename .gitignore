@@ -1,2 +1,4 @@
 .idea
 ./venv/
+configs/debugging.yaml
+*.pyc
