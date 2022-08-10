@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Callable, Tuple
 
+import torch
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
@@ -16,12 +17,15 @@ class SegmentationDataset(Dataset):
             label_path: Path,
             images: List[str],
             labels: List[str],
-            preload_percentage: float = 1
+            preload_percentage: float = 1,
+            device: torch.device = torch.device("cpu")
     ):
         self.image_path = image_path
         self.label_path = label_path
         self.images = images
         self.labels = labels
+
+        self.device = device
 
         self.loaded_images = None
         self.loaded_labels = None
@@ -32,19 +36,20 @@ class SegmentationDataset(Dataset):
         self.loaded_images = [None] * len(self)
         self.loaded_labels = [None] * len(self)
 
-        for idx in range(int(preload_percentage * len(self))):
+        num_of_instances = int(np.floor(preload_percentage * len(self)))
+        for idx in range(num_of_instances):
             self.loaded_images[idx] = self._load_image(self.image_path.joinpath(self.images[idx]))
             self.loaded_labels[idx] = self._load_image(self.label_path.joinpath(self.labels[idx]))
 
-    @staticmethod
-    def _load_image(image_path):
-        return SegmentationDataset.to_tensor(Image.open(image_path))
+    def _load_image(self, image_path):
+        return SegmentationDataset.to_tensor(Image.open(image_path)).to(self.device)
 
     @staticmethod
     def load_dataset(
             image_path: str, 
             label_path: str,
-            preload_percentage: float = 1
+            preload_percentage: float = 1,
+            device: torch.device = torch.device("cpu")
     ) -> "SegmentationDataset":
         image_path = Path(image_path).expanduser()
         label_path = Path(label_path).expanduser()
@@ -52,15 +57,16 @@ class SegmentationDataset(Dataset):
         images = sorted([f.name for f in image_path.glob("*.png")])
         labels = [f.replace("Mask", "seg") for f in images]
 
-        return SegmentationDataset(image_path, label_path, images, labels, preload_percentage)
+        return SegmentationDataset(image_path, label_path, images, labels, preload_percentage, device)
 
     @staticmethod
     def load_train_val_and_test_data(
             image_path: str, 
             label_path: str,
-            preload_percentage: float = 1
+            preload_percentage: float = 1,
+            device: torch.device = torch.device("cpu")
     ) -> Tuple["SegmentationDataset", "SegmentationDataset", "SegmentationDataset"]:
-        full_dataset = SegmentationDataset.load_dataset(image_path, label_path, preload_percentage=0)
+        full_dataset = SegmentationDataset.load_dataset(image_path, label_path, preload_percentage=0, device=device)
 
         train_set_full, test_set = full_dataset.split(0.9, preload_percentage=0)
 
@@ -99,14 +105,16 @@ class SegmentationDataset(Dataset):
                 self.label_path,
                 images[:split_idx],
                 labels[:split_idx],
-                preload_percentage
+                preload_percentage,
+                self.device
             ),
             SegmentationDataset(
                 self.image_path,
                 self.label_path,
                 images[split_idx:],
                 labels[split_idx:],
-                preload_percentage
+                preload_percentage,
+                self.device
             )
         )
 
