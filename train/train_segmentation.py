@@ -9,6 +9,7 @@ import torch
 from data.segmentation_dataset import SegmentationDataset
 from train.unet_trainer import UNetTrainer
 from utils.config_parser import ConfigParser
+from tqdm import tqdm
 
 
 def train(config: Dict[str, Any]):
@@ -18,6 +19,7 @@ def train(config: Dict[str, Any]):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     dataset_train, dataset_val, _ = SegmentationDataset.load_train_val_and_test_data(**config["dataset"], device=device)
+    print(len(dataset_train), len(dataset_val))
     train_loader = DataLoader(dataset_train, **config["train_loader"])
     val_loader = DataLoader(dataset_val, **config["val_loader"])
 
@@ -33,11 +35,14 @@ def train(config: Dict[str, Any]):
         train_loss = list()
         val_loss = list()
 
-        for x, y in train_loader:
+        model.train()
+        for x, y in tqdm(train_loader):
             train_loss.append(model.train_on_batch(x, y))
 
-        for x, y in val_loader:
-            val_loss.append(model.validation_step(x, y))
+        model.eval()
+        with torch.no_grad():
+            for x, y in val_loader:
+                val_loss.append(model.validation_step(x, y))
 
         epoch_train_loss.append(np.mean(train_loss).item())
         epoch_val_loss.append(np.mean(val_loss).item())
