@@ -17,8 +17,18 @@ def train(config: Dict[str, Any]):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    dataset_train, dataset_val, _ = SegmentationDataset.load_train_val_and_test_data(**config["dataset"], device=device)
+    dataset_train = SegmentationDataset.load_from_label_file(
+        config["train_dataset_path"],
+        **config["dataset"],
+        device=device
+    )
+    dataset_val = SegmentationDataset.load_from_label_file(
+        config["val_dataset_path"],
+        **config["dataset"],
+        device=device
+    )
     print(len(dataset_train), len(dataset_val))
+
     train_loader = DataLoader(dataset_train, **config["train_loader"])
     val_loader = DataLoader(dataset_val, **config["val_loader"])
 

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import List, Callable, Tuple
 
@@ -45,6 +46,28 @@ class SegmentationDataset(Dataset):
         return SegmentationDataset.to_tensor(Image.open(image_path)).to(self.device)
 
     @staticmethod
+    def load_from_label_file(
+            label_file: str,
+            image_path: str,
+            label_path: str,
+            preload_percentage: float = 1,
+            device: torch.device = torch.device("cpu")
+    ) -> "SegmentationDataset":
+        file = Path(label_file).expanduser()
+
+        with open(file, "r") as f:
+            label_file = json.loads(f.read())
+
+        return SegmentationDataset(
+            Path(image_path).expanduser(),
+            Path(label_path).expanduser(),
+            label_file["images"],
+            label_file["labels"],
+            preload_percentage,
+            device
+        )
+
+    @staticmethod
     def load_dataset(
             image_path: str, 
             label_path: str,
@@ -85,6 +108,15 @@ class SegmentationDataset(Dataset):
             self._load_image(self.image_path.joinpath(self.images[idx])),
             self._load_image(self.label_path.joinpath(self.labels[idx]))
         )
+
+    def save(self, file: str):
+        file = Path(file).expanduser()
+
+        with open(file, "w") as f:
+            f.write(json.dumps({
+                "images": self.images,
+                "labels": self.labels
+            }))
 
     def split(
             self, 
