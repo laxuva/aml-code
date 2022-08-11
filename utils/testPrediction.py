@@ -1,16 +1,15 @@
 from pathlib import Path
 
-import cv2
 import numpy as np
 import torch
 from PIL import Image
-from matplotlib import pyplot as plt
 from torchvision.transforms import ToTensor
 
+from metrics.segmentation.iou import iou
 from network.segmentation.unet import UNet
+from plots.segmentation_overlay import SegmentationOverlay
 from train.unet_trainer import UNetTrainer
 from utils.config_parser import ConfigParser
-from metrics.segmentation.iou import iou
 
 
 def test_prediction(
@@ -38,25 +37,20 @@ def test_prediction(
     y = ToTensor()(Image.open(label_path))
     y_pred = model.forward(x[None, :])[0].cpu().detach()
 
-    print(y_pred.min(), y_pred.max())
-    print(iou(y_pred, y, th=th))
-
-    y_pred = y_pred.numpy()
+    print(f"y_pred min: {y_pred.min().item()}; max: {y_pred.max().item()}")
+    print(f"IOU: {iou(y_pred, y, th=th).item()}")
 
     x = np.transpose(x.cpu().detach().numpy(), (1, 2, 0))
-    y_pred = np.transpose(y_pred, (1, 2, 0))
+    y_pred = np.transpose(y_pred.numpy(), (1, 2, 0))
 
-    plt.imshow(x)
-    plt.show()
-    plt.imshow(y_pred / np.max(y_pred) * 255)
-    plt.show()
-    plt.imshow((y_pred > th).astype(np.uint8) * 255)
-    plt.show()
-
-    overlay = np.zeros_like(x)
-    overlay[:, :, 1] = y_pred[:, :, 0] > th
-    plt.imshow(cv2.addWeighted(x, 0.5, overlay, 0.3, 0))
-    plt.show()
+    overlay = SegmentationOverlay(x, y_pred, y.numpy()[0, :, :], th)
+    overlay.plot_image()
+    overlay.plot_y_pred(binary=False)
+    overlay.plot_y_pred(binary=True)
+    # overlay.plot_y_true()
+    # overlay.plot_y_true_overlay()
+    # overlay.plot_y_pred_overlay()
+    overlay.plot_y_pred_and_y_true_overlay()
 
 
 if __name__ == '__main__':
