@@ -93,7 +93,6 @@ class UNet(torch.nn.Module):
 
         self.final_layer = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=channels_per_depth[-1], out_channels=final_out_channels, kernel_size=1),
-            torch.nn.BatchNorm2d(final_out_channels),
             torch.nn.Sigmoid()
         )
 

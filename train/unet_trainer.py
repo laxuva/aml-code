@@ -25,6 +25,7 @@ class UNetTrainer(pl.LightningModule):
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss", "train_iou", "val_iou")
+        self.iou_th = train_config["iou_th"]
 
     def configure_optimizers(self):
         return [self.optimizer, self.lr_scheduler]
@@ -37,7 +38,7 @@ class UNetTrainer(pl.LightningModule):
         self.metrics_logger.log("train_loss", loss.cpu().detach().item())
         self.metrics_logger.log(
             "train_iou",
-            iou(y_pred, y, th=0.25).cpu().detach().item()
+            iou(y_pred, y, th=self.iou_th).cpu().detach().item()
         )
 
         return loss
@@ -60,7 +61,7 @@ class UNetTrainer(pl.LightningModule):
         self.metrics_logger.log("val_loss", loss.cpu().detach().item())
         self.metrics_logger.log(
             "val_iou",
-            iou(y_pred, y, th=0.25).cpu().detach().item()
+            iou(y_pred, y, th=self.iou_th).cpu().detach().item()
         )
 
         return loss
