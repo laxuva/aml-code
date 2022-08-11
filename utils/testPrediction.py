@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 from PIL import Image
@@ -23,8 +24,8 @@ def test_prediction(
 
     try:
         model = UNet(**config["model"])
-        model.load_state_dict(torch.load(model_path, map_location=device))
         model.to(device)
+        model.load_state_dict(torch.load(model_path, map_location=device))
     except RuntimeError:
         model = UNetTrainer(config["model"], config["training"], device=device)
         model.load_state_dict(torch.load(model_path, map_location=device))
@@ -37,13 +38,25 @@ def test_prediction(
 
     y_pred = y_pred / np.max(y_pred) * 255
 
-    plt.imshow(np.transpose(x.cpu().detach().numpy(), (1, 2, 0)))
+    x = np.transpose(x.cpu().detach().numpy(), (1, 2, 0))
+    y_pred = np.transpose(y_pred, (1, 2, 0))
+
+    plt.imshow(x)
     plt.show()
-    plt.imshow(np.transpose(y_pred, (1, 2, 0)))
+    plt.imshow(y_pred)
     plt.show()
-    plt.imshow((np.transpose(y_pred, (1, 2, 0)) > th * 255).astype(np.uint8) * 255)
+    plt.imshow((y_pred > th * 255).astype(np.uint8) * 255)
+    plt.show()
+
+    overlay = np.zeros_like(x)
+    overlay[:, :, 1] = y_pred[:, :, 0] > th * 255
+    plt.imshow(cv2.addWeighted(x, 0.5, overlay, 0.3, 0))
     plt.show()
 
 
 if __name__ == '__main__':
-    test_prediction(model_path="../train/final_model.pt", image_path="~\\Documents\\data\\aml\\maskedSubset\\00000_Mask.png")
+    test_prediction(
+        model_path="../train/best_model.pt",
+        image_path="~\\Documents\\data\\aml\\masked128png\\69758_Mask.png",
+        th=0.2
+    )

@@ -9,8 +9,10 @@ class DownSamplingBlock(torch.nn.Module):
 
         self.forward_layers = torch.nn.Sequential(
             torch.nn.Conv2d(in_features, out_features, kernel_size=3, padding=1, stride=1),
+            torch.nn.BatchNorm2d(out_features),
             torch.nn.ReLU(),
             torch.nn.Conv2d(out_features, out_features, kernel_size=3, padding=1, stride=1),
+            torch.nn.BatchNorm2d(out_features),
             torch.nn.ReLU()
         )
 
@@ -19,6 +21,7 @@ class DownSamplingBlock(torch.nn.Module):
         else:
             self.down_sampling_layer = torch.nn.Sequential(
                 torch.nn.Conv2d(out_features, out_features, kernel_size=3, padding=1, stride=2),
+                torch.nn.BatchNorm2d(out_features),
                 torch.nn.ReLU()
             )
 
@@ -36,18 +39,22 @@ class UpSamplingBlock(torch.nn.Module):
                 torch.nn.Upsample(scale_factor=2),
                 torch.nn.ZeroPad2d((0, 1, 0, 1)),
                 torch.nn.Conv2d(in_channels, in_channels // 2, kernel_size=2, stride=1, padding=0),
+                torch.nn.BatchNorm2d(in_channels // 2),
                 torch.nn.ReLU()
             )
         else:
             self.up_conv = torch.nn.Sequential(
                 torch.nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2, padding=0),
+                torch.nn.BatchNorm2d(in_channels // 2),
                 torch.nn.ReLU()
             )
 
         self.forward_layers = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels // 2 + skip_channels, out_channels, kernel_size=3, padding=1, stride=1),
+            torch.nn.BatchNorm2d(out_channels),
             torch.nn.ReLU(),
             torch.nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, stride=1),
+            torch.nn.BatchNorm2d(out_channels),
             torch.nn.ReLU()
         )
 
@@ -69,9 +76,11 @@ class UNet(torch.nn.Module):
         self.intermediate_layers = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=channels_per_depth[-2], out_channels=channels_per_depth[-1], kernel_size=3,
                             padding=1, stride=1),
+            torch.nn.BatchNorm2d(channels_per_depth[-1]),
             torch.nn.ReLU(),
             torch.nn.Conv2d(in_channels=channels_per_depth[-1], out_channels=channels_per_depth[-1], kernel_size=3,
                             padding=1, stride=1),
+            torch.nn.BatchNorm2d(channels_per_depth[-1]),
             torch.nn.ReLU()
         )
 
@@ -84,6 +93,7 @@ class UNet(torch.nn.Module):
 
         self.final_layer = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=channels_per_depth[-1], out_channels=final_out_channels, kernel_size=1),
+            torch.nn.BatchNorm2d(final_out_channels),
             torch.nn.Sigmoid()
         )
 
