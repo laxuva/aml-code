@@ -30,7 +30,7 @@ class MetricsLogger:
             self.current_epoch_metrics[metric_name] = list()
 
         print(f"[epoch {self.epoch}] " +
-              "; ".join(f"{metric_name}: {self.get_last(metric_name)}"
+              "; ".join(f"{metric_name}: {self.get_last(metric_name):.3}"
                         for metric_name in self.metrics_to_track)
               )
 
