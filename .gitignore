@@ -2,3 +2,6 @@
 ./venv/
 configs/debugging.yaml
 *.pyc
+train/best_model.pt
+train/final_model.pt
+train/train_info.json

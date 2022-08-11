@@ -15,7 +15,8 @@ class DiceLoss:
             ) -> torch.Tensor:
         # return 2 * torch.sum(y_pred * y_true) / (torch.sum(torch.square(y_pred)) + torch.sum(torch.square(y_true)))
 
-        axes = (2, 3)
+        axes = list(range(1, len(y_pred.shape)))
+
         numerator = 2. * torch.sum(y_pred * y_true,
                                    axes)
         denominator = torch.sum(torch.square(y_pred) + torch.square(y_true),

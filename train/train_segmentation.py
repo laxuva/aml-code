@@ -1,6 +1,5 @@
 from typing import Dict, Any
 from pathlib import Path
-import json
 
 import numpy as np
 from torch.utils.data import DataLoader
@@ -24,9 +23,6 @@ def train(config: Dict[str, Any]):
     val_loader = DataLoader(dataset_val, **config["val_loader"])
 
     model = UNetTrainer(config["model"], train_config, device=device)
-    lr_scheduler = model.lr_scheduler
-    epoch_train_loss = list()
-    epoch_val_loss = list()
     best_val_loss = np.inf
     epochs_without_improvement = 0
 
@@ -43,16 +39,10 @@ def train(config: Dict[str, Any]):
             for x, y in val_loader:
                 val_loss.append(model.validation_step(x, y))
 
-        epoch_train_loss.append(np.mean(train_loss).item())
-        epoch_val_loss.append(np.mean(val_loss).item())
+        model.end_epoch()  # does a lr scheduler step and a metrics logger step
 
-        lr_scheduler.step()
-
-        print(f"[epoch {epoch + 1}/{train_config['max_epochs']}] "
-              f"train loss: {epoch_train_loss[-1]}; val loss: {epoch_val_loss[-1]}")
-
-        if epoch_val_loss[-1] < best_val_loss:
-            best_val_loss = epoch_val_loss[-1]
+        if model.metrics_logger.get_last("val_loss") < best_val_loss:
+            best_val_loss = model.metrics_logger.get_last("val_loss")
             epochs_without_improvement = 0
             torch.save(model.get_model().state_dict(), out_path.joinpath("best_model.pt"))
         else:
@@ -60,12 +50,6 @@ def train(config: Dict[str, Any]):
 
             if epochs_without_improvement > train_config["break_criterion"]:
                 break
-
-        with open(out_path.joinpath("train_info.json"), "w") as f:
-            f.write(json.dumps({
-                "train_loss": epoch_train_loss,
-                "val_loss": epoch_val_loss
-            }))
 
     torch.save(model.get_model().state_dict(), out_path.joinpath("final_model.pt"))
 

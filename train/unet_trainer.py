@@ -5,6 +5,8 @@ import torch
 
 from network.segmentation.unet import UNet
 from train.loss.dice_loss import DiceLoss
+from train.utils.metrics_logger import MetricsLogger
+from metrics.segmentation.iou import iou
 
 
 class UNetTrainer(pl.LightningModule):
@@ -22,6 +24,8 @@ class UNetTrainer(pl.LightningModule):
         self.optimizer = torch.optim.Adam(lr=train_config["learning_rate"], params=self.model.parameters())
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
 
+        self.metrics_logger = MetricsLogger("train_loss", "val_loss", "train_iou", "val_iou")
+
     def configure_optimizers(self):
         return [self.optimizer, self.lr_scheduler]
 
@@ -29,6 +33,12 @@ class UNetTrainer(pl.LightningModule):
         y_pred = self.model.forward(x)
 
         loss = self.loss_function(y_pred, y)
+
+        self.metrics_logger.log("train_loss", loss.cpu().detach().item())
+        self.metrics_logger.log(
+            "train_iou",
+            iou(y_pred, y, th=0.25).cpu().detach().item()
+        )
 
         return loss
 
@@ -42,12 +52,22 @@ class UNetTrainer(pl.LightningModule):
 
         return loss.cpu().detach().item()
 
-    def validation_step(self, x, y) -> float:
+    def validation_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
         loss = self.loss_function(y_pred, y)
 
-        return loss.cpu().detach().item()
+        self.metrics_logger.log("val_loss", loss.cpu().detach().item())
+        self.metrics_logger.log(
+            "val_iou",
+            iou(y_pred, y, th=0.25).cpu().detach().item()
+        )
+
+        return loss
+
+    def end_epoch(self):
+        self.metrics_logger.end_epoch()
+        self.lr_scheduler.step()
 
     def get_model(self):
         return self.model
