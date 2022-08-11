@@ -13,7 +13,8 @@ from utils.config_parser import ConfigParser
 
 def test_prediction(
         model_path="../train/best_model_12_epochs.pt",
-        image_path="D:/aml/localData/masked128png/00000_Mask.png"
+        image_path="D:/aml/localData/masked128png/00000_Mask.png",
+        th: float = 0.25
         ):
     config = ConfigParser.read("../configs/debugging.yaml")
     image_path = Path(image_path).expanduser()
@@ -40,7 +41,9 @@ def test_prediction(
     plt.show()
     plt.imshow(np.transpose(y_pred, (1, 2, 0)))
     plt.show()
+    plt.imshow((np.transpose(y_pred, (1, 2, 0)) > th * 255).astype(np.uint8) * 255)
+    plt.show()
 
 
 if __name__ == '__main__':
-    test_prediction()
+    test_prediction(model_path="../train/final_model.pt", image_path="~\\Documents\\data\\aml\\maskedSubset\\00000_Mask.png")
