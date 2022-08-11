@@ -55,7 +55,7 @@ def test_prediction(
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../train/best_model.pt",
+        model_path="../train/final_model.pt",
         image_path="~\\Documents\\data\\aml\\masked128png\\45844_Mask.png",
         label_path="~\\Documents\\data\\aml\\seg_mask128png\\45844_seg.png",
         th=0.002
