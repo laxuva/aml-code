@@ -61,11 +61,11 @@ def train(config: Dict[str, Any]):
             if epochs_without_improvement > train_config["break_criterion"]:
                 break
 
-    with open(out_path.joinpath("train_info.json"), "w") as f:
-        f.write(json.dumps({
-            "train_loss": epoch_train_loss,
-            "val_loss": epoch_val_loss
-        }))
+        with open(out_path.joinpath("train_info.json"), "w") as f:
+            f.write(json.dumps({
+                "train_loss": epoch_train_loss,
+                "val_loss": epoch_val_loss
+            }))
 
     torch.save(model.get_model().state_dict(), out_path.joinpath("final_model.pt"))
 
