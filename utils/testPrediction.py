@@ -12,7 +12,7 @@ from utils.config_parser import ConfigParser
 
 
 def test_prediction(
-        model_path="../train/final_model.pt",
+        model_path="../train/best_model_12_epochs.pt",
         image_path="D:/aml/localData/masked128png/00000_Mask.png"
         ):
     config = ConfigParser.read("../configs/debugging.yaml")
@@ -29,18 +29,18 @@ def test_prediction(
         model.load_state_dict(torch.load(model_path, map_location=device))
 
     model.eval()
-    x = ToTensor()(Image.open(image_path))
+    x = ToTensor()(Image.open(image_path)).to(device)
     y_pred = model.forward(x[None, :]).cpu().detach().numpy()[0]
 
     print(np.min(y_pred), np.max(y_pred))
 
     y_pred = y_pred / np.max(y_pred) * 255
 
-    plt.imshow(np.transpose(x, (1, 2, 0)))
+    plt.imshow(np.transpose(x.cpu().detach().numpy(), (1, 2, 0)))
     plt.show()
     plt.imshow(np.transpose(y_pred, (1, 2, 0)))
     plt.show()
 
 
 if __name__ == '__main__':
-    test_prediction(image_path="~\\Documents\\data\\aml\\maskedSubset\\00001_Mask.png")
+    test_prediction()
