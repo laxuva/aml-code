@@ -33,7 +33,7 @@ class AutoencoderTrainer(pl.LightningModule):
         y_pred = self.model.forward(x)
 
         if self.predict_difference:
-            y_pred += x
+            y_pred = y_pred + x
 
         loss = self.loss_function(y_pred, y)
 
@@ -55,7 +55,7 @@ class AutoencoderTrainer(pl.LightningModule):
         y_pred = self.model.forward(x)
 
         if self.predict_difference:
-            y_pred += x
+            y_pred = y_pred + x
 
         loss = self.loss_function(y_pred, y)
 
