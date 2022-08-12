@@ -1,6 +1,9 @@
 dataset.image_path: "D:\\aml\\localData\\masked128png"
 dataset.label_path: "D:\\aml\\localData\\seg_mask128png"
 dataset.preload_percentage: 0.011
+dataset.train_label: "D:\\aml\\localData\\train_dataset_small.json"
+dataset.val_label: "D:\\aml\\localData\\val_dataset_small.json"
+dataset.test_label: "D:\\aml\\localData\\test_dataset.json"
 
 train_loader.batch_size: 20
 train_loader.shuffle: true
