@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from PIL import Image
-from torchvision.transforms import ToTensor
+from torchvision.transforms import ToTensor, ToPILImage
 
 from network.segmentation.unet import UNet
 from utils.config_parser import ConfigParser
@@ -30,7 +30,12 @@ def test_prediction(
     y = ToTensor()(Image.open(label_path))
     y_pred = model.forward(x[None, :])[0].cpu().detach()
 
-    print(f"MAE: {torch.mean(torch.abs(y_pred - y))}")
+    ToPILImage()(y_pred).save("./test.png")
+
+    if config["training"]["predict_difference"]:
+        print(f"MAE: {torch.mean(torch.abs(y_pred + x - y))}")
+    else:
+        print(f"MAE: {torch.mean(torch.abs(y_pred - y))}")
 
     x = np.transpose(x.cpu().detach().numpy(), (1, 2, 0))
     y_pred = np.transpose(y_pred.numpy(), (1, 2, 0))
