@@ -50,9 +50,7 @@ def test_main(config_path: str):
 
     dataset = SegmentationDataset.load_from_label_file(
         config["dataset"]["test_label"],
-        config["dataset"]["image_path"],
-        config["dataset"]["label_path"],
-        config["dataset"]["preload_percentage"],
+        **config["dataset"]["params"],
         device=device
     )
 

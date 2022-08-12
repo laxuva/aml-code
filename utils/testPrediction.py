@@ -8,7 +8,7 @@ from torchvision.transforms import ToTensor
 from metrics.segmentation.iou import iou
 from network.segmentation.unet import UNet
 from plots.segmentation_overlay import SegmentationOverlay
-from train.unet_trainer import UNetTrainer
+from train.segmentation.unet_trainer import UNetTrainer
 from utils.config_parser import ConfigParser
 
 

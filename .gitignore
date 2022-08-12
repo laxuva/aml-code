@@ -5,3 +5,4 @@ configs/debugging.yaml
 train/best_model.pt
 train/final_model.pt
 train/train_info.json
+/configs/debugging_autoencoder.yaml
