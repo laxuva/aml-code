@@ -35,16 +35,16 @@ class AutoencoderDataset(Dataset):
         self.load_data(preload_percentage)
 
     def load_data(self, preload_percentage: float = 1):
-        self.loaded_original_images = [None] * len(self)
         self.loaded_facemask_images = [None] * len(self)
+        self.loaded_original_images = [None] * len(self)
 
         num_of_instances = int(np.floor(preload_percentage * len(self)))
         for idx in range(num_of_instances):
-            self.loaded_original_images[idx] = self._load_image(
-                self.original_image_path.joinpath(self.original_images[idx])
-            )
             self.loaded_facemask_images[idx] = self._load_image(
                 self.facemask_image_path.joinpath(self.facemask_images[idx])
+            )
+            self.loaded_original_images[idx] = self._load_image(
+                self.original_image_path.joinpath(self.original_images[idx])
             )
 
     def _load_image(self, image_path):
@@ -66,7 +66,7 @@ class AutoencoderDataset(Dataset):
         return AutoencoderDataset(
             Path(original_image_path).expanduser(),
             Path(facemask_image_path).expanduser(),
-            label_file["images"],
+            [f.replace("_Mask", "") for f in label_file["images"]],
             label_file["images"],
             preload_percentage,
             device
@@ -82,7 +82,7 @@ class AutoencoderDataset(Dataset):
         original_image_path = Path(original_image_path).expanduser()
         facemask_image_path = Path(facemask_image_path).expanduser()
         facemask_images = sorted([f.name for f in facemask_image_path.glob("*.png")])
-        original_images = [f for f in facemask_images]
+        original_images = [f.replace("_Mask", "") for f in facemask_images]
 
         return AutoencoderDataset(
             original_image_path,
