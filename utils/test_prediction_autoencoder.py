@@ -42,10 +42,14 @@ def test_prediction(
     plt.imshow(y_pred)
     plt.show()
 
+    if config["training"]["predict_difference"]:
+        plt.imshow(y_pred + x)
+        plt.show()
+
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../train/final_model.pt",
-        image_path="~\\Documents\\data\\aml\\masked128png\\45844_Mask.png",
+        model_path="../train/best_model.pt",
+        image_path="~\\Documents\\data\\aml\\autoencoder128png\\45844_Mask.png",
         label_path="~\\Documents\\data\\aml\\original128png\\45844.png"
     )
