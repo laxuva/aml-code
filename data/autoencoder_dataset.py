@@ -66,8 +66,8 @@ class AutoencoderDataset(Dataset):
         return AutoencoderDataset(
             Path(original_image_path).expanduser(),
             Path(facemask_image_path).expanduser(),
-            label_file["original_images"],
-            label_file["facemask_images"],
+            label_file["images"],
+            label_file["images"],
             preload_percentage,
             device
         )
@@ -130,8 +130,8 @@ class AutoencoderDataset(Dataset):
 
         with open(file, "w") as f:
             f.write(json.dumps({
-                "original_images": self.original_images,
-                "facemask_images": self.facemask_images
+                "images": self.original_images,  # as the images are named exactly the same
+                # "facemask_images": self.facemask_images
             }))
 
     def split(
