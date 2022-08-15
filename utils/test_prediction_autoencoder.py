@@ -10,14 +10,10 @@ from network.segmentation.unet import UNet
 from utils.config_parser import ConfigParser
 
 
-def test_prediction(
-        model_path,
-        image_path="D:/aml/localData/masked128png/00000_Mask.png",
-        label_path="D:/aml/localData/seg_mask128png/00000_Mask.png"
-):
+def test_prediction(model_path, image_path, seg_map_path):
     config = ConfigParser.read("../configs/debugging_autoencoder.yaml")
     image_path = Path(image_path).expanduser()
-    label_path = Path(label_path).expanduser()
+    seg_map_path = Path(seg_map_path).expanduser()
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -26,16 +22,14 @@ def test_prediction(
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
-    x = ToTensor()(Image.open(image_path)).to(device)
-    y = ToTensor()(Image.open(label_path))
+    y = ToTensor()(Image.open(image_path)).to(device)
+    seg_map = ToTensor()(Image.open(seg_map_path)).to(device)
+    x = y.clone()
+    x[:, seg_map[0] != 0] = 0
+    x = torch.cat((x, seg_map))
     y_pred = model.forward(x[None, :])[0].cpu().detach()
 
     ToPILImage()(y_pred).save("./test.png")
-
-    if config["training"]["predict_difference"]:
-        print(f"MAE: {torch.mean(torch.abs(y_pred + x - y))}")
-    else:
-        print(f"MAE: {torch.mean(torch.abs(y_pred - y))}")
 
     x = np.transpose(x.cpu().detach().numpy(), (1, 2, 0))
     y_pred = np.transpose(y_pred.numpy(), (1, 2, 0))
@@ -47,18 +41,24 @@ def test_prediction(
     plt.imshow(y_pred)
     plt.show()
 
-    y_pred[x != 0] = 0
+    y_pred[x[:, :, 3] == 0] = 0
     plt.imshow(y_pred)
     plt.show()
 
-    if config["training"]["predict_difference"]:
-        plt.imshow(y_pred + x)
-        plt.show()
+    plt.imshow(y_pred + x[:, :, 0:3])
+    plt.show()
+
+    print(f"MAE: {np.mean(np.abs(y_pred - y))}")
 
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../evaluation/best_model.pt",
-        image_path="~\\Documents\\data\\aml\\autoencoder128png\\45844_Mask.png",
-        label_path="~\\Documents\\data\\aml\\original128png\\45844.png"
+        model_path="../evaluation/autoencoder/best_model.pt",
+        image_path="~\\Documents\\data\\aml\\original128png\\00018.png",
+        seg_map_path="~\\Documents\\data\\aml\\seg_mask128png\\00018.png"
     )
+    # test_prediction(
+    #     model_path="../evaluation/autoencoder/best_model.pt",
+    #     image_path="~\\Documents\\data\\aml\\test\\test_1.png",
+    #     seg_map_path="~\\Documents\\data\\aml\\test\\test_1_label.png"
+    # )
