@@ -119,10 +119,11 @@ class AutoencoderDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.loaded_original_images[idx] is not None:
-            return self.loaded_original_images[idx], self.loaded_facemask_images[idx]
+            return self.loaded_facemask_images[idx], self.loaded_original_images[idx]
         return (
-            self._load_image(self.original_image_path.joinpath(self.original_images[idx])),
-            self._load_image(self.facemask_image_path.joinpath(self.facemask_images[idx]))
+
+            self._load_image(self.facemask_image_path.joinpath(self.facemask_images[idx])),
+            self._load_image(self.original_image_path.joinpath(self.original_images[idx]))
         )
 
     def save(self, file: str):
