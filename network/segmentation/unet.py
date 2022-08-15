@@ -4,8 +4,10 @@ import torch
 
 
 class DownSamplingBlock(torch.nn.Module):
-    def __init__(self, in_features, out_features, use_pooling: bool = False):
+    def __init__(self, in_features, out_features, use_pooling: bool = False, return_just_downsampled_result: bool = False):
         super(DownSamplingBlock, self).__init__()
+
+        self.return_just_downsampled_result = return_just_downsampled_result
 
         self.forward_layers = torch.nn.Sequential(
             torch.nn.Conv2d(in_features, out_features, kernel_size=3, padding=1, stride=1),
@@ -27,6 +29,10 @@ class DownSamplingBlock(torch.nn.Module):
 
     def forward(self, x):
         x_hat = self.forward_layers.forward(x)
+
+        if self.return_just_downsampled_result:
+            return self.down_sampling_layer.forward(x_hat)
+
         return x_hat, self.down_sampling_layer.forward(x_hat)
 
 

@@ -9,6 +9,7 @@ from data.segmentation_dataset import SegmentationDataset
 from data.autoencoder_dataset import AutoencoderDataset
 from train.segmentation.unet_trainer import UNetTrainer
 from train.autoencoder.autoencoder_trainer import AutoencoderTrainer
+from train.autoencoder.adversarial_trainer import AdversarialAutoencoderTrainer
 from utils.config_parser import ConfigParser
 from tqdm import tqdm
 
@@ -45,10 +46,22 @@ def train(config: Dict[str, Any]):
         model_class = UNetTrainer
     elif config["model"]["type"] == "AutoencoderTrainer":
         model_class = AutoencoderTrainer
+    elif config["model"]["type"] == "AdversarialAutoencoderTrainer":
+        model_class = AdversarialAutoencoderTrainer
     else:
         raise NotImplementedError(f"The model class {config['model']['type']} is not available")
 
-    model = model_class(config["model"]["params"], train_config, device=device)
+    if model_class == AdversarialAutoencoderTrainer:
+        model = model_class(
+            config["model"]["params"],
+            train_config,
+            device=device,
+            train_dataset=dataset_train,
+            val_dataset=dataset_val
+        )
+    else:
+        model = model_class(config["model"]["params"], train_config, device=device)
+
     best_val_loss = np.inf
     epochs_without_improvement = 0
 
