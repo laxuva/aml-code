@@ -78,7 +78,7 @@ class SegmentationDataset(Dataset):
         label_path = Path(label_path).expanduser()
 
         images = sorted([f.name for f in image_path.glob("*.png")])
-        labels = [f.replace("Mask", "seg") for f in images]
+        labels = images.copy()
 
         return SegmentationDataset(image_path, label_path, images, labels, preload_percentage, device)
 

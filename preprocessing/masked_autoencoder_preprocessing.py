@@ -20,12 +20,12 @@ def mask_the_face_masks(face_mask_folder: str, label_map_folder: str, out_path: 
         img[img != 255] += 1
         img[label != 0] = 0
 
-        Image.fromarray(img).save(out_path.joinpath(image_file.name))
+        Image.fromarray(img).save(out_path.joinpath(image_file.name.replace("_Mask", "")))
 
 
 if __name__ == '__main__':
     mask_the_face_masks(
-        "~\\Documents\\data\\aml\\masked128png",
-        "~\\Documents\\data\\aml\\seg_mask128png",
-        "~\\Documents\\data\\aml\\autoencoder128png"
+        "C:\\Users\\Christoph\\Desktop\\dataset\\masked128png",
+        "C:\\Users\\Christoph\\Desktop\\dataset\\seg_mask128png",
+        "C:\\Users\\Christoph\\Desktop\\dataset\\autoencoder128png"
     )

@@ -12,4 +12,4 @@ def split_dataset(image_path, label_path):
 
 
 if __name__ == '__main__':
-    split_dataset("~\\Documents\\data\\aml\\masked128png", "~\\Documents\\data\\aml\\seg_mask128png")
+    split_dataset("C:\\Users\\Christoph\\Desktop\\dataset\\masked128png", "C:\\Users\\Christoph\\Desktop\\dataset\\seg_mask128png")
