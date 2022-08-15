@@ -66,7 +66,7 @@ class AutoencoderDataset(Dataset):
         return AutoencoderDataset(
             Path(original_image_path).expanduser(),
             Path(facemask_image_path).expanduser(),
-            [f.replace("_Mask", "") for f in label_file["images"]],
+            label_file["images"],
             label_file["images"],
             preload_percentage,
             device
@@ -82,7 +82,7 @@ class AutoencoderDataset(Dataset):
         original_image_path = Path(original_image_path).expanduser()
         facemask_image_path = Path(facemask_image_path).expanduser()
         facemask_images = sorted([f.name for f in facemask_image_path.glob("*.png")])
-        original_images = [f.replace("_Mask", "") for f in facemask_images]
+        original_images = facemask_images
 
         return AutoencoderDataset(
             original_image_path,
