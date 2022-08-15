@@ -24,7 +24,11 @@ class AutoencoderTrainer(pl.LightningModule):
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss")
 
-        self.predict_difference = train_config["predict_difference"]
+    def compute_loss(self, y_pred, y, x):
+        batch_size, _, w, h = x.shape
+        seg_map = x[:, 3].reshape(batch_size, 1, w, h)
+        seg_map = torch.cat((seg_map, seg_map, seg_map), dim=1) != 0
+        return self.loss_function(y_pred[seg_map], y[seg_map])
 
     def configure_optimizers(self):
         return [self.optimizer, self.lr_scheduler]
@@ -32,10 +36,7 @@ class AutoencoderTrainer(pl.LightningModule):
     def training_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
-        if self.predict_difference:
-            y_pred = y_pred + x
-
-        loss = self.loss_function(y_pred[x == 0], y[x == 0])
+        loss = self.compute_loss(y_pred, y, x)
 
         self.metrics_logger.log("train_loss", loss.cpu().detach().item())
 
@@ -54,10 +55,7 @@ class AutoencoderTrainer(pl.LightningModule):
     def validation_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
-        if self.predict_difference:
-            y_pred = y_pred + x
-
-        loss = self.loss_function(y_pred[x == 0], y[x == 0])
+        loss = self.compute_loss(y_pred, y, x)
 
         self.metrics_logger.log("val_loss", loss.cpu().detach().item())
 

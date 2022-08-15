@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Callable, Tuple
+from typing import List, Callable, Tuple, Optional
 
 import torch
 import numpy as np
@@ -15,19 +15,21 @@ class AutoencoderDataset(Dataset):
     def __init__(
             self,
             original_image_path: Path,
-            facemask_image_path: Path,
+            seg_map_image_path: Path,
             original_images: List[str],
-            facemask_images: List[str],
+            seg_map_images: List[str],
             preload_percentage: float = 1,
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            add_seg_map_channel_to_x: bool = True
     ):
         self.original_image_path = original_image_path
-        self.facemask_image_path = facemask_image_path
+        self.seg_map_image_path = seg_map_image_path
 
         self.original_images = original_images
-        self.facemask_images = facemask_images
+        self.seg_map_images = seg_map_images
 
         self.device = device
+        self.add_seg_map_channel_to_x = add_seg_map_channel_to_x
 
         self.loaded_original_images = None
         self.loaded_facemask_images = None
@@ -35,17 +37,25 @@ class AutoencoderDataset(Dataset):
         self.load_data(preload_percentage)
 
     def load_data(self, preload_percentage: float = 1):
-        self.loaded_facemask_images = [None] * len(self)
-        self.loaded_original_images = [None] * len(self)
+        self.loaded_facemask_images: List[Optional[torch.Tensor]] = [None] * len(self)
+        self.loaded_original_images: List[Optional[torch.Tensor]] = [None] * len(self)
 
         num_of_instances = int(np.floor(preload_percentage * len(self)))
         for idx in range(num_of_instances):
-            self.loaded_facemask_images[idx] = self._load_image(
-                self.facemask_image_path.joinpath(self.facemask_images[idx])
-            )
             self.loaded_original_images[idx] = self._load_image(
                 self.original_image_path.joinpath(self.original_images[idx])
             )
+
+            seg_map = self._load_image(
+                self.seg_map_image_path.joinpath(self.seg_map_images[idx])
+            )
+
+            self.loaded_facemask_images[idx] = self.loaded_original_images[idx].clone()
+            self.loaded_facemask_images[idx][:, seg_map[0] != 0] = 0
+
+            if self.add_seg_map_channel_to_x:
+                self.loaded_facemask_images[idx] = torch.cat((self.loaded_facemask_images[idx], seg_map))
+
 
     def _load_image(self, image_path):
         return AutoencoderDataset.to_tensor(Image.open(image_path)).to(self.device)
@@ -54,7 +64,7 @@ class AutoencoderDataset(Dataset):
     def load_from_label_file(
             label_file: str,
             original_image_path: Path,
-            facemask_image_path: Path,
+            seg_map_image_path: Path,
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu")
     ) -> "AutoencoderDataset":
@@ -65,7 +75,7 @@ class AutoencoderDataset(Dataset):
 
         return AutoencoderDataset(
             Path(original_image_path).expanduser(),
-            Path(facemask_image_path).expanduser(),
+            Path(seg_map_image_path).expanduser(),
             label_file["images"],
             label_file["images"],
             preload_percentage,
@@ -75,20 +85,20 @@ class AutoencoderDataset(Dataset):
     @staticmethod
     def load_dataset(
             original_image_path: str,
-            facemask_image_path: str,
+            seg_map_image_path: str,
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu")
     ) -> "AutoencoderDataset":
         original_image_path = Path(original_image_path).expanduser()
-        facemask_image_path = Path(facemask_image_path).expanduser()
-        facemask_images = sorted([f.name for f in facemask_image_path.glob("*.png")])
-        original_images = facemask_images
+        seg_map_image_path = Path(seg_map_image_path).expanduser()
+        seg_map_images = sorted([f.name for f in seg_map_image_path.glob("*.png")])
+        original_images = seg_map_images
 
         return AutoencoderDataset(
             original_image_path,
-            facemask_image_path,
+            seg_map_image_path,
             original_images,
-            facemask_images,
+            seg_map_images,
             preload_percentage,
             device
         )
@@ -96,13 +106,13 @@ class AutoencoderDataset(Dataset):
     @staticmethod
     def load_train_val_and_test_data(
             original_image_path: str,
-            facemask_image_path: str,
+            seg_map_image_path: str,
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu")
     ) -> Tuple["AutoencoderDataset", "AutoencoderDataset", "AutoencoderDataset"]:
         full_dataset = AutoencoderDataset.load_dataset(
             original_image_path,
-            facemask_image_path,
+            seg_map_image_path,
             preload_percentage=0,
             device=device
         )
@@ -115,15 +125,24 @@ class AutoencoderDataset(Dataset):
         return train_set, val_set, test_set
 
     def __len__(self):
-        return len(self.facemask_images)
+        return len(self.seg_map_images)
 
     def __getitem__(self, idx):
         if self.loaded_original_images[idx] is not None:
             return self.loaded_facemask_images[idx], self.loaded_original_images[idx]
-        return (
 
-            self._load_image(self.facemask_image_path.joinpath(self.facemask_images[idx])),
-            self._load_image(self.original_image_path.joinpath(self.original_images[idx]))
+        img = self._load_image(self.original_image_path.joinpath(self.original_images[idx]))
+        seg_map = self._load_image(self.seg_map_image_path.joinpath(self.seg_map_images[idx]))
+
+        face_mask_img = img.clone()
+        face_mask_img[:, seg_map[0] != 0] = 0
+
+        if self.add_seg_map_channel_to_x:
+            face_mask_img = torch.cat((face_mask_img, seg_map))
+
+        return (
+            face_mask_img,
+            img
         )
 
     def save(self, file: str):
@@ -132,7 +151,7 @@ class AutoencoderDataset(Dataset):
         with open(file, "w") as f:
             f.write(json.dumps({
                 "images": self.original_images,  # as the images are named exactly the same
-                # "facemask_images": self.facemask_images
+                # "seg_map_images": self.seg_map_images
             }))
 
     def split(
@@ -144,24 +163,24 @@ class AutoencoderDataset(Dataset):
         idxs = np.random.RandomState(seed=seed).permutation(len(self))
 
         original_images = np.array(self.original_images)[idxs].tolist()
-        facemask_images = np.array(self.facemask_images)[idxs].tolist()
+        seg_map_images = np.array(self.seg_map_images)[idxs].tolist()
 
         split_idx = int(split_percentage * len(self))
 
         return (
             AutoencoderDataset(
                 self.original_image_path,
-                self.facemask_image_path,
+                self.seg_map_image_path,
                 original_images[:split_idx],
-                facemask_images[:split_idx],
+                seg_map_images[:split_idx],
                 preload_percentage,
                 self.device
             ),
             AutoencoderDataset(
                 self.original_image_path,
-                self.facemask_image_path,
+                self.seg_map_image_path,
                 original_images[split_idx:],
-                facemask_images[split_idx:],
+                seg_map_images[split_idx:],
                 preload_percentage,
                 self.device
             )
