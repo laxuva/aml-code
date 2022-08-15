@@ -36,7 +36,7 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
             **train_config["lr_scheduler"]
         )
 
-        self.metrics_logger = MetricsLogger("train_loss", "val_loss", "train_loss_d")
+        self.metrics_logger = MetricsLogger("train_loss", "val_loss", "train_loss_d", "val_loss_d")
 
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
