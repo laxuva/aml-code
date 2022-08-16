@@ -29,5 +29,13 @@ class Discriminator(torch.nn.Module):
             torch.nn.Sigmoid()
         )
 
+    def clip_weights(self):
+        def clip(m):
+            if type(m) == torch.nn.Linear or type(m) == torch.nn.Conv2d:
+                for param in m.parameters():
+                    param.clamp(-0.01, 0.01)
+
+        self.apply(clip)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.linear_layers.forward(self.conv_layers.forward(x).flatten(start_dim=1))

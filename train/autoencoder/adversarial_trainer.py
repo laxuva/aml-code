@@ -50,48 +50,55 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
         x = torch.cat([dataset[idx][0][None, :] for idx in np.random.permutation(range(len_dataset))[:batch_size]])
         return self.model.forward(x).detach() + x[:, :3]
 
-    def compute_reconstruction_loss(self, y_pred, y, x):
+    def get_segmentation_map(self, x):
         batch_size, _, w, h = x.shape
         seg_map = x[:, 3].reshape(batch_size, 1, w, h)
-        seg_map = torch.cat((seg_map, seg_map, seg_map), dim=1) != 0
+        return torch.cat((seg_map, seg_map, seg_map), dim=1) != 0
+
+    def compute_reconstruction_loss(self, y_pred, y, x):
+        seg_map = self.get_segmentation_map(x)
         return self.reconstruction_loss_function(y_pred[seg_map], y[seg_map])
 
     def configure_optimizers(self):
         return [self.optimizer, self.lr_scheduler]
 
-    def train_on_batch(self, x, y) -> float:
-        self.optimizer.zero_grad()
-
-        y_pred = self.model.forward(x)
-
-        self.discriminator.eval()
-        dis_pred = self.discriminator.forward(x[:, 0:3] + y_pred)  # TODO just add it where it is needed!
-        loss_autoencoder = self.compute_reconstruction_loss(y_pred, y, x) + torch.mean(torch.log(1 - dis_pred))
-
-        loss_autoencoder.backward()
-        self.optimizer.step()
-
+    def do_discriminator_steps(self, x):
         self.optimizer_discriminator.zero_grad()
 
         self.model.eval()
-        self.discriminator.train()
 
         discriminator_losses = list()
 
         for k in range(10):
             dis_pred_fake = self.discriminator.forward(self.sample_fake_images(x.shape[0], self.train_dataset))
             dis_pred_true = self.discriminator.forward(self.sample_real_images(x.shape[0], self.train_dataset))
-            loss_discriminator = -(torch.mean(torch.log(dis_pred_true)) + torch.mean(torch.log(1 - dis_pred_fake)))
+            loss_discriminator = 1 - (torch.mean(dis_pred_true) - torch.mean(dis_pred_fake))
             discriminator_losses.append(loss_discriminator.cpu().detach())
 
             loss_discriminator.backward()
             self.optimizer_discriminator.step()
 
+            self.discriminator.clip_weights()
+
         self.model.train()
 
+        return torch.mean(torch.tensor(discriminator_losses)).item()
+
+    def train_on_batch(self, x, y) -> float:
+        discriminator_loss = self.do_discriminator_steps(x)
+
+        self.optimizer.zero_grad()
+
+        y_pred = self.model.forward(x)
+
+        dis_pred = self.discriminator.forward(x[:, 0:3] + y_pred)  # TODO just add it where it is needed!
+        loss_autoencoder = 0.75 * self.compute_reconstruction_loss(y_pred, y, x) + 0.25 * (1 - torch.mean(dis_pred))
+
+        loss_autoencoder.backward()
+        self.optimizer.step()
+
         self.metrics_logger.log("train_loss", loss_autoencoder.cpu().detach().item())
-        mean_loss = torch.mean(torch.tensor(discriminator_losses)).item()
-        self.metrics_logger.log("train_loss_d", mean_loss)
+        self.metrics_logger.log("train_loss_d", discriminator_loss)
 
         return loss_autoencoder.cpu().detach().item()
 
