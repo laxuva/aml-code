@@ -94,4 +94,5 @@ def train(config: Dict[str, Any]):
 
 
 if __name__ == '__main__':
-    train(ConfigParser.read("../configs/debugging_autoencoder.yaml"))
+    # train(ConfigParser.read("../configs/debugging_autoencoder.yaml"))
+    train(ConfigParser.read("../configs/debugging_gan.yaml"))
