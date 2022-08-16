@@ -41,6 +41,12 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
 
+    def autoencoder_loss(self, x, y, y_pred, dis_pred):
+        return 0.75 * self.compute_reconstruction_loss(y_pred, y, x) + 0.25 * (1 - torch.mean(dis_pred))
+
+    def discriminator_loss(self, dis_pred_true, dis_pred_fake):
+        return 1 - (torch.mean(dis_pred_true) - torch.mean(dis_pred_fake))
+
     def sample_real_images(self, batch_size, dataset):
         len_dataset = len(dataset)
         return torch.cat([dataset[idx][1][None, :] for idx in np.random.permutation(range(len_dataset))[:batch_size]])
@@ -73,7 +79,7 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
         for k in range(10):
             dis_pred_fake = self.discriminator.forward(self.sample_fake_images(x.shape[0], self.train_dataset))
             dis_pred_true = self.discriminator.forward(self.sample_real_images(x.shape[0], self.train_dataset))
-            loss_discriminator = 1 - (torch.mean(dis_pred_true) - torch.mean(dis_pred_fake))
+            loss_discriminator = self.discriminator_loss(dis_pred_true, dis_pred_fake)
             discriminator_losses.append(loss_discriminator.cpu().detach())
 
             loss_discriminator.backward()
@@ -94,7 +100,7 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
         seg_map = self.get_segmentation_map(x)
 
         dis_pred = self.discriminator.forward(x[:, 0:3] + y_pred * seg_map)  # TODO just add it where it is needed!
-        loss_autoencoder = 0.75 * self.compute_reconstruction_loss(y_pred, y, x) + 0.25 * (1 - torch.mean(dis_pred))
+        loss_autoencoder = self.autoencoder_loss(x, y, y_pred, dis_pred)
 
         loss_autoencoder.backward()
         self.optimizer.step()
@@ -107,11 +113,11 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
     def validation_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
-        diss_pred = self.discriminator.forward(x[:, 0:3] + y_pred)
-        diss_loss = torch.mean(torch.log(1 - diss_pred))
+        dis_pred_fake = self.discriminator.forward(x[:, 0:3] + y_pred)
+        dis_pred_true = self.discriminator.forward(self.sample_real_images(x.shape[0], self.val_dataset))
 
-        loss_autoencoder = self.compute_reconstruction_loss(y_pred, y, x) + diss_loss
-        loss_discriminator = torch.mean(torch.log(self.discriminator.forward(y))) + diss_loss
+        loss_autoencoder = self.autoencoder_loss(x, y, y_pred, dis_pred_fake)
+        loss_discriminator = self.discriminator_loss(dis_pred_true, dis_pred_fake)
 
         self.metrics_logger.log("val_loss", loss_autoencoder.cpu().detach().item())
         self.metrics_logger.log("val_loss_d", loss_discriminator.cpu().detach().item())
