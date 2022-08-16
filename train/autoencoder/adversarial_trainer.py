@@ -48,7 +48,8 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
     def sample_fake_images(self, batch_size, dataset):
         len_dataset = len(dataset)
         x = torch.cat([dataset[idx][0][None, :] for idx in np.random.permutation(range(len_dataset))[:batch_size]])
-        return self.model.forward(x).detach() + x[:, :3]
+        seg_map = self.get_segmentation_map(x)
+        return self.model.forward(x).detach() * seg_map + x[:, :3]
 
     def get_segmentation_map(self, x):
         batch_size, _, w, h = x.shape
@@ -90,8 +91,9 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
         self.optimizer.zero_grad()
 
         y_pred = self.model.forward(x)
+        seg_map = self.get_segmentation_map(x)
 
-        dis_pred = self.discriminator.forward(x[:, 0:3] + y_pred)  # TODO just add it where it is needed!
+        dis_pred = self.discriminator.forward(x[:, 0:3] + y_pred * seg_map)  # TODO just add it where it is needed!
         loss_autoencoder = 0.75 * self.compute_reconstruction_loss(y_pred, y, x) + 0.25 * (1 - torch.mean(dis_pred))
 
         loss_autoencoder.backward()
