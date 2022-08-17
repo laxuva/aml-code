@@ -7,3 +7,4 @@ train/final_model.pt
 train/train_info.json
 /configs/debugging_autoencoder.yaml
 /configs/debugging_gan.yaml
+/configs/debugging_diffusion_model.yaml
