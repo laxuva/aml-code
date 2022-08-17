@@ -44,18 +44,16 @@ def test_prediction(
     seg_mask = torch.cat((seg_mask, seg_mask, seg_mask), dim=1)
 
     img_t = do_multiple_diffusion_steps(x, T, diffusion_betas)
-    img_t[seg_mask != 0] = torch.normal(0.5, 0.02, img_t[seg_mask != 0].size())
 
     for t in range(T, 0, -1):
         ToPILImage()(img_t[0]).save(out_path.joinpath(f"orig_img_{t}.png"))
 
         img_t_minus_1_pred = model.forward(img_t)
+        ToPILImage()(img_t_minus_1_pred[0]).save(out_path.joinpath(f"img_{t}.png"))
 
         # img_t in next step
         img_t = do_multiple_diffusion_steps(x, t - 1, diffusion_betas)
         img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
-
-        ToPILImage()(img_t[0]).save(out_path.joinpath(f"img_{t}.png"))
 
     img_0_pred = model.forward(img_t)
 
