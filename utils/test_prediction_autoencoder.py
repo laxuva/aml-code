@@ -33,7 +33,7 @@ def test_prediction(model_path, image_path, seg_map_path):
 
     x = np.transpose(x.cpu().detach().numpy(), (1, 2, 0))
     y_pred = np.transpose(y_pred.numpy(), (1, 2, 0))
-    y = np.transpose(y.numpy(), (1, 2, 0))
+    y = np.transpose(y.cpu().detach().numpy(), (1, 2, 0))
 
     plt.imshow(y)
     plt.show()
