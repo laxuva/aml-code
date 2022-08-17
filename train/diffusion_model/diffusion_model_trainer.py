@@ -42,11 +42,10 @@ class DiffusionModelTrainer(GeneralTrainer):
                 self.optimizer.zero_grad()
 
             img_t_minus_1 = self._do_multiple_diffusion_steps(img, t - 1)
-            img_t_minus_1_noise = img_t - img_t_minus_1
 
-            img_t_minus_1_noise_pred = self.model.forward(img_t)
+            img_t_minus_1_pred = self.model.forward(img_t)
 
-            loss = self.loss_function(img_t_minus_1_noise_pred[seg_mask == 0], img_t_minus_1_noise[seg_mask == 0])
+            loss = self.loss_function(img_t_minus_1_pred[seg_mask == 0], img_t_minus_1[seg_mask == 0])
             losses.append(loss)
 
             if train:
@@ -55,15 +54,14 @@ class DiffusionModelTrainer(GeneralTrainer):
 
             # img_t in next step
             img_t = img_t_minus_1
-            img_t[seg_mask != 0] += img_t_minus_1_noise_pred[seg_mask != 0].detach()
+            img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
 
         if train:
             self.optimizer.zero_grad()
 
-        img_0_noise_pred = self.model.forward(img_t)
-        img_0_noise = img_t - img
+        img_0_pred = self.model.forward(img_t)
 
-        loss = self.loss_function(img_0_noise_pred, img_0_noise)
+        loss = self.loss_function(img_0_pred, img)
         losses.append(loss)
 
         if train:

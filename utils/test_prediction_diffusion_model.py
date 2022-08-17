@@ -44,30 +44,32 @@ def test_prediction(
     seg_mask = torch.cat((seg_mask, seg_mask, seg_mask), dim=1)
 
     img_t = do_multiple_diffusion_steps(x, T, diffusion_betas)
-    ToPILImage()(img_t[0]).save(out_path.joinpath(f"orig_img_{T}.png"))
+    img_t[seg_mask != 0] = torch.normal(0.5, 0.02, img_t[seg_mask != 0].size())
 
     for t in range(T, 0, -1):
-        img_t_minus_1 = do_multiple_diffusion_steps(x, t - 1, diffusion_betas)
-        ToPILImage()(img_t_minus_1[0]).save(out_path.joinpath(f"orig_img_{t-1}.png"))
+        ToPILImage()(img_t[0]).save(out_path.joinpath(f"orig_img_{t}.png"))
 
-        img_t_minus_1_noise_pred = model.forward(img_t)
+        img_t_minus_1_pred = model.forward(img_t)
 
         # img_t in next step
-        img_t = img_t_minus_1
-        img_t[seg_mask != 0] += img_t_minus_1_noise_pred[seg_mask != 0].detach()
+        img_t = do_multiple_diffusion_steps(x, t - 1, diffusion_betas)
+        img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
 
         ToPILImage()(img_t[0]).save(out_path.joinpath(f"img_{t}.png"))
 
-    img_0_noise_pred = model.forward(img_t)
-    img_0 = img_t + img_0_noise_pred
+    img_0_pred = model.forward(img_t)
 
-    ToPILImage()(img_0[0]).save(out_path.joinpath("img_0.png"))
+    ToPILImage()(img_0_pred[0]).save(out_path.joinpath("img_0.png"))
+
+    img_final = x.clone()
+    img_final[seg_mask != 0] = img_0_pred[seg_mask != 0]
+    ToPILImage()(img_final[0]).save(out_path.joinpath("img_0_final.png"))
 
 
 if __name__ == '__main__':
     test_prediction(
         model_path="../train/final_model.pt",
-        image_path="~\\Documents\\data\\aml\\original128png\\28594.png",
+        image_path="~\\Documents\\data\\aml\\masked128png\\28594.png",
         label_path="~\\Documents\\data\\aml\\seg_mask128png\\28594.png",
         out_path="~\\Documents\\data\\aml\\out"
     )
