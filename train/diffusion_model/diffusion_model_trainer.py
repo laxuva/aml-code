@@ -49,8 +49,6 @@ class DiffusionModelTrainer(GeneralTrainer):
             loss = self.loss_function(img_t_minus_1_noise_pred[seg_mask == 0], img_t_minus_1_noise[seg_mask == 0])
             losses.append(loss)
 
-            print(f"{t}/{T}: {loss}")
-
             if train:
                 loss.backward()
                 self.optimizer.step()
@@ -67,8 +65,6 @@ class DiffusionModelTrainer(GeneralTrainer):
 
         loss = self.loss_function(img_0_noise_pred, img_0_noise)
         losses.append(loss)
-
-        print(f"{0}/{T}: {loss}")
 
         if train:
             loss.backward()
@@ -87,8 +83,7 @@ class DiffusionModelTrainer(GeneralTrainer):
         return loss
 
     def validation_step(self, img, seg_mask) -> torch.Tensor:
-        # loss = self.backward_diffusion_process(img, seg_mask, train=False)
-        loss = torch.tensor(0)
+        loss = self.backward_diffusion_process(img, seg_mask, train=False)
 
         self.metrics_logger.log("val_loss", loss.cpu().detach().item())
 
