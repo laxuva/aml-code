@@ -10,6 +10,7 @@ from data.autoencoder_dataset import AutoencoderDataset
 from train.segmentation.unet_trainer import UNetTrainer
 from train.autoencoder.autoencoder_trainer import AutoencoderTrainer
 from train.autoencoder.adversarial_trainer import AdversarialAutoencoderTrainer
+from train.diffusion_model.diffusion_model_trainer import DiffusionModelTrainer
 from utils.config_parser import ConfigParser
 from tqdm import tqdm
 
@@ -48,6 +49,8 @@ def train(config: Dict[str, Any]):
         model_class = AutoencoderTrainer
     elif config["model"]["type"] == "AdversarialAutoencoderTrainer":
         model_class = AdversarialAutoencoderTrainer
+    elif config["model"]["type"] == "DiffusionModelTrainer":
+        model_class = DiffusionModelTrainer
     else:
         raise NotImplementedError(f"The model class {config['model']['type']} is not available")
 
@@ -95,4 +98,4 @@ def train(config: Dict[str, Any]):
 
 if __name__ == '__main__':
     # train(ConfigParser.read("../configs/debugging_autoencoder.yaml"))
-    train(ConfigParser.read("../configs/debugging_gan.yaml"))
+    train(ConfigParser.read("../configs/debugging_diffusion_model.yaml"))
