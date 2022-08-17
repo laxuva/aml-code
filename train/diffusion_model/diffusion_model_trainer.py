@@ -45,7 +45,8 @@ class DiffusionModelTrainer(GeneralTrainer):
 
             img_t_minus_1_pred = self.model.forward(img_t)
 
-            loss = self.loss_function(img_t_minus_1_pred[seg_mask == 0], img_t_minus_1[seg_mask == 0])
+            # loss = self.loss_function(img_t_minus_1_pred[seg_mask == 0], img_t_minus_1[seg_mask == 0])
+            loss = self.loss_function(img_t_minus_1_pred, img_t_minus_1)
             losses.append(loss)
 
             if train:
@@ -54,20 +55,19 @@ class DiffusionModelTrainer(GeneralTrainer):
 
             # img_t in next step
             img_t = img_t_minus_1
-            img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
+            # img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
 
-        for k in range(20):
-            if train:
-                self.optimizer.zero_grad()
+        if train:
+            self.optimizer.zero_grad()
 
-            img_0_pred = self.model.forward(img_t)
+        img_0_pred = self.model.forward(img_t)
 
-            loss = self.loss_function(img_0_pred, img)
-            losses.append(loss)
+        loss = self.loss_function(img_0_pred, img)
+        losses.append(loss)
 
-            if train:
-                loss.backward()
-                self.optimizer.step()
+        if train:
+            loss.backward()
+            self.optimizer.step()
 
         return torch.mean(torch.Tensor(losses))
 
