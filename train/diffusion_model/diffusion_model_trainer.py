@@ -19,7 +19,7 @@ class DiffusionModelTrainer(GeneralTrainer):
             train_config["diffusion_beta_1"],
             train_config["diffusion_beta_capital_t"],
             train_config["diffusion_steps"]
-        )
+        ).to(device)
 
         self.loss_function = torch.nn.MSELoss()
 
