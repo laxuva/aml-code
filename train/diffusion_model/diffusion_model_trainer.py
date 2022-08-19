@@ -35,9 +35,9 @@ class DiffusionModelTrainer(GeneralTrainer):
         T = len(self.diffusion_betas)
 
         img = img * 2 - 1 # zentralization with normal distribution
-        img_shape = img.shape
-        img_shape = img_shape[1] + 1
-        img_with_t = torch.ones(img_shape)
+        img_shape = list(img.shape)
+        img_shape[1] = img_shape[1] + 1
+        img_with_t = torch.ones(img_shape).to(device)
         losses = list()
         for t in range(1, T+1):
             self.optimizer.zero_grad()
@@ -50,7 +50,7 @@ class DiffusionModelTrainer(GeneralTrainer):
             # input_for_model = torch.clip(alpha * img + torch.sqrt(1 - alpha) * e,
             #                              -1,
             #                              1)
-            e_pred = self.model.forward(input_for_model)
+            e_pred = self.model.forward(img_with_t)
 
             # if t in range(T-5,T):
             #     print(self.diffusion_betas)
@@ -75,45 +75,35 @@ class DiffusionModelTrainer(GeneralTrainer):
 
         return torch.mean(torch.tensor(losses))
 
-    def backward_diffusion_process(self, img, seg_mask, train: bool = True):
+    def backward_diffusion_process(self, img, train: bool = True):
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         T = len(self.diffusion_betas)
 
-        seg_mask = torch.cat((seg_mask, seg_mask, seg_mask), dim=1)
-
-        img_t = self._do_multiple_diffusion_steps(img, T)
+        img = img * 2 - 1  # zentralization with normal distribution
+        img_shape = list(img.shape)
+        img_shape[1] = img_shape[1] + 1
+        img_with_t = torch.ones(img_shape).to(device)
         losses = list()
 
-        for t in range(T, 0, -1):
+        for t in range(1, T+1):
             if train:
                 self.optimizer.zero_grad()
 
-            img_t_minus_1 = self._do_multiple_diffusion_steps(img, t - 1)
+            e = torch.normal(0,
+                             1,
+                             img.shape).to(device)
+            alpha = torch.prod(1 - self.diffusion_betas[:t])
+            input_for_model = torch.clip(torch.sqrt(alpha) * img + torch.sqrt(1 - alpha) * e, -1, 1)
+            img_with_t[:, :3, :, :] = input_for_model
+            img_with_t[:, 3, :, :] = alpha
+            e_pred = self.model.forward(img_with_t)
 
-            img_t_minus_1_pred = self.model.forward(img_t)
-
-            # loss = self.loss_function(img_t_minus_1_pred[seg_mask == 0], img_t_minus_1[seg_mask == 0])
-            loss = self.loss_function(img_t_minus_1_pred, img_t_minus_1)
+            loss = self.loss_function(e_pred, e)
             losses.append(loss)
 
             if train:
                 loss.backward()
                 self.optimizer.step()
-
-            # img_t in next step
-            img_t = img_t_minus_1
-            # img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
-
-        if train:
-            self.optimizer.zero_grad()
-
-        img_0_pred = self.model.forward(img_t)
-
-        loss = self.loss_function(img_0_pred, img)
-        losses.append(loss)
-
-        if train:
-            loss.backward()
-            self.optimizer.step()
 
         return torch.mean(torch.Tensor(losses))
 
@@ -121,14 +111,14 @@ class DiffusionModelTrainer(GeneralTrainer):
         return self.training_step(x, y).cpu().detach().item()
 
     def training_step(self, img, seg_mask) -> torch.Tensor:
-        loss = self.training_new(img)
+        loss = self.backward_diffusion_process(img)
 
         self.metrics_logger.log("train_loss", loss.cpu().detach().item())
 
         return loss
 
     def validation_step(self, img, seg_mask) -> torch.Tensor:
-        loss = self.backward_diffusion_process(img, seg_mask, train=False)
+        loss = self.backward_diffusion_process(img, train=False)
 
         self.metrics_logger.log("val_loss", loss.cpu().detach().item())
 
