@@ -70,7 +70,7 @@ class UpSamplingBlock(torch.nn.Module):
 
 
 class UNet(torch.nn.Module):
-    def __init__(self, in_channels: int, channels_per_depth: List[int],  final_out_channels: int):
+    def __init__(self, in_channels: int, channels_per_depth: List[int],  final_out_channels: int, output_activation_function: str = "Sigmoid"):
         super(UNet, self).__init__()
 
         self.downsampling_layers = list()
@@ -99,8 +99,7 @@ class UNet(torch.nn.Module):
 
         self.final_layer = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=channels_per_depth[-1], out_channels=final_out_channels, kernel_size=1),
-            torch.nn.Sigmoid()
-        )
+            torch.nn.Sigmoid() if output_activation_function == "Sigmoid" else torch.nn.Tanh())
 
     def forward(self, x):
         skip_outputs = list()

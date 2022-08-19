@@ -24,6 +24,7 @@ def test_prediction(
     label_path = Path(label_path).expanduser()
     out_path = Path(out_path).expanduser()
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = torch.device("cpu")
 
     diffusion_betas = torch.linspace(
         config["training"]["diffusion_beta_1"],
@@ -33,42 +34,40 @@ def test_prediction(
 
     T = config["training"]["diffusion_steps"]
 
-
-
     model = UNet(**config["model"]["params"])
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     x = ToTensor()(Image.open(image_path)).to(device)[None, :]
-    seg_mask = ToTensor()(Image.open(label_path))[None, :]
-    seg_mask = torch.cat((seg_mask, seg_mask, seg_mask), dim=1)
 
     img_t = do_multiple_diffusion_steps(x, T, diffusion_betas)
 
     for t in range(T, 0, -1):
         ToPILImage()(img_t[0]).save(out_path.joinpath(f"orig_img_{t}.png"))
-
-        img_t_minus_1_pred = model.forward(img_t)
-        ToPILImage()(img_t_minus_1_pred[0]).save(out_path.joinpath(f"img_{t}.png"))
+        img_t = do_multiple_diffusion_steps(x,
+                                            t,
+                                            diffusion_betas)
+        noise_to_reduce = model.forward(img_t)
+        ToPILImage()(noise_to_reduce[0]).save(out_path.joinpath(f"img_{t}.png"))
 
         # img_t in next step
-        img_t = do_multiple_diffusion_steps(x, t - 1, diffusion_betas)
-        img_t[seg_mask != 0] = img_t_minus_1_pred[seg_mask != 0].detach()
+        img_t -= noise_to_reduce
+        # img_t[seg_mask == 0] = do_multiple_diffusion_steps(x, t, diffusion_betas)[seg_mask == 0].detach()
 
-    img_0_pred = model.forward(img_t)
+    img_0_pred = img_t - model.forward(img_t)
 
     ToPILImage()(img_0_pred[0]).save(out_path.joinpath("img_0.png"))
 
-    img_final = x.clone()
-    img_final[seg_mask != 0] = img_0_pred[seg_mask != 0]
-    ToPILImage()(img_final[0]).save(out_path.joinpath("img_0_final.png"))
+    # img_final = x.clone()
+    # img_final[seg_mask != 0] = img_0_pred[seg_mask != 0]
+    # ToPILImage()(img_final[0]).save(out_path.joinpath("img_0_final.png"))
 
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../train/best_model.pt",
-        image_path="~\\Documents\\data\\aml\\masked128png\\28594.png",
+        model_path="../evaluation/dm/best_model.pt",
+        image_path="~\\Documents\\data\\aml\\original128png\\28594.png",
         label_path="~\\Documents\\data\\aml\\seg_mask128png\\28594.png",
         out_path="~\\Documents\\data\\aml\\out"
     )
