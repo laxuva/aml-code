@@ -47,7 +47,7 @@ class DiffusionModelDataset(Dataset):
     @staticmethod
     def load_from_label_file(
             label_file: str,
-            image_path: Path,
+            image_path: str,
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu"),
             transforms: List[Callable] = []
@@ -88,8 +88,8 @@ class DiffusionModelDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.loaded_images[idx] is not None:
-            return self.loaded_images[idx]
-        return self._load_image(self.image_path.joinpath(self.images[idx]))
+            return self.loaded_images[idx], 0
+        return self._load_image(self.image_path.joinpath(self.images[idx])), 0
 
     def save(self, file: str):
         file = Path(file).expanduser()

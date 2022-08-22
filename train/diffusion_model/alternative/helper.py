@@ -1,15 +1,22 @@
+""""
+Adapted from: https://colab.research.google.com/drive/1sjy9odlSSy0RBVgMTgP7s99NXsqglsUL?usp=sharing#scrollTo=uuckjpW_k1LN
+Video: https://www.youtube.com/watch?v=a4Yfz2FxXiY
+"""
+
+
+import math
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn.functional as F
-import torchvision
 import tqdm
 from matplotlib import pyplot as plt
 from torch import device, nn
-from torchvision import transforms
 from torch.utils.data import DataLoader
-import numpy as np
-import math
+from torchvision import transforms
+
+from data.diffusion_model_dataset import DiffusionModelDataset
 
 
 def linear_beta_schedule(timesteps, start=0.0001, end=0.02):
@@ -55,23 +62,31 @@ sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
 IMG_SIZE = 64
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 
 def load_transformed_dataset():
-    data_transforms = [
-        transforms.Resize((IMG_SIZE, IMG_SIZE)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),  # Scales data into [0,1]
-        transforms.Lambda(lambda t: (t * 2) - 1)  # Scale between [-1, 1]
-    ]
-    data_transform = transforms.Compose(data_transforms)
+    train = DiffusionModelDataset.load_from_label_file(
+        "C:\\Users\\Christoph\\Desktop\\dataset\\train_dataset_small.json",
+        image_path="C:\\Users\\Christoph\\Desktop\\dataset\\original128png",
+        preload_percentage=0.2,
+        device=torch.device("cuda"),
+        transforms=[
+            # transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.Lambda(lambda t: (t * 2) - 1)
+        ]
+    )
+    test = DiffusionModelDataset.load_from_label_file(
+        "C:\\Users\\Christoph\\Desktop\\dataset\\val_dataset_small.json",
+        image_path="C:\\Users\\Christoph\\Desktop\\dataset\\original128png",
+        preload_percentage=0.2,
+        device=torch.device("cuda"),
+        transforms=[
+            # transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.Lambda(lambda t: (t * 2) - 1)
+        ]
+    )
 
-    train = torchvision.datasets.StanfordCars(root=".", download=True,
-                                              transform=data_transform)
-
-    test = torchvision.datasets.StanfordCars(root=".", download=True,
-                                             transform=data_transform, split='test')
     return torch.utils.data.ConcatDataset([train, test])
 
 
@@ -269,6 +284,7 @@ if __name__ == '__main__':
     model.to(device)
     optimizer = Adam(model.parameters(), lr=0.001)
     epochs = 100  # Try more!
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
     for epoch in range(epochs):
         for step, batch in tqdm.tqdm(enumerate(dataloader)):
@@ -279,8 +295,9 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            if step % 10 == 0:
+            if step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 sample_plot_image()
 
+        lr_scheduler.step()
         torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
