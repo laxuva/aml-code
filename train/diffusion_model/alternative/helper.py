@@ -67,9 +67,9 @@ BATCH_SIZE = 128
 
 def load_transformed_dataset():
     train = DiffusionModelDataset.load_from_label_file(
-        "C:\\Users\\Christoph\\Desktop\\dataset\\train_dataset_small.json",
-        image_path="C:\\Users\\Christoph\\Desktop\\dataset\\original128png",
-        preload_percentage=0.2,
+        "~/Documents/data/aml/train_dataset.json",
+        image_path="~/Documents/data/aml/original128png",
+        preload_percentage=1,
         device=torch.device("cuda"),
         transforms=[
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
@@ -77,9 +77,9 @@ def load_transformed_dataset():
         ]
     )
     test = DiffusionModelDataset.load_from_label_file(
-        "C:\\Users\\Christoph\\Desktop\\dataset\\val_dataset_small.json",
-        image_path="C:\\Users\\Christoph\\Desktop\\dataset\\original128png",
-        preload_percentage=0.2,
+        "~/Documents/data/aml/val_dataset.json",
+        image_path="~/Documents/data/aml/original128png",
+        preload_percentage=1,
         device=torch.device("cuda"),
         transforms=[
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     model.to(device)
     optimizer = Adam(model.parameters(), lr=0.001)
     epochs = 100  # Try more!
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
     for epoch in range(epochs):
         for step, batch in tqdm.tqdm(enumerate(dataloader)):
@@ -299,5 +299,5 @@ if __name__ == '__main__':
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 sample_plot_image()
 
-        lr_scheduler.step()
+        # lr_scheduler.step()
         torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
