@@ -258,7 +258,7 @@ def sample_plot_image():
 
 
 model = SimpleUnet()
-import platform
+
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -266,17 +266,12 @@ def main():
     optimizer = Adam(model.parameters(), lr=0.001)
     epochs = 250  # Try more!
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-
-    if platform.system() == "Windows":
-        num_workers = 0
-    else:
-        num_workers = 8
     data = load_transformed_dataset()
     dataloader = DataLoader(data,
                             batch_size=BATCH_SIZE,
                             shuffle=True,
-                            drop_last=True,
-                            num_workers=num_workers)
+                            drop_last=True)
+
 
     for epoch in range(epochs):
         for step, batch in tqdm.tqdm(enumerate(dataloader)):
