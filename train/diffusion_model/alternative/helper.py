@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 import tqdm
 from matplotlib import pyplot as plt
-from torch import device, nn
+from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.optim import Adam
@@ -106,10 +106,6 @@ def show_tensor_image(image):
     if len(image.shape) == 4:
         image = image[0, :, :, :]
     plt.imshow(reverse_transforms(image))
-
-
-data = load_transformed_dataset()
-dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
 
 def get_loss(model, x_0, t):
@@ -262,7 +258,7 @@ def sample_plot_image():
 
 
 model = SimpleUnet()
-
+import platform
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -270,6 +266,17 @@ def main():
     optimizer = Adam(model.parameters(), lr=0.001)
     epochs = 250  # Try more!
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+
+    if platform.system() == "Windows":
+        num_workers = 0
+    else:
+        num_workers = 8
+    data = load_transformed_dataset()
+    dataloader = DataLoader(data,
+                            batch_size=BATCH_SIZE,
+                            shuffle=True,
+                            drop_last=True,
+                            num_workers=num_workers)
 
     for epoch in range(epochs):
         for step, batch in tqdm.tqdm(enumerate(dataloader)):
