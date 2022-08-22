@@ -285,7 +285,7 @@ def main():
 
             if step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                sample_plot_image()
+                # sample_plot_image()
 
         # lr_scheduler.step()
         torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
