@@ -62,9 +62,9 @@ def test_prediction(
         alpha = torch.sqrt(1 - diffusion_betas[t]).to(device)
         noise_to_reduce = model.forward(img_with_t)
         new_value = 1 / torch.sqrt(alpha) * (img_with_t[:, :3] - (1-alpha) / torch.sqrt(1 - alpha_head) * noise_to_reduce)
-        # if  t > 0:
-        #     new_value + z * ((1 - alpha_head_t_minus_one) / (1 - alpha_head))
-        #     alpha_head_t_minus_one = alpha_head
+        if  t > 0:
+            new_value + z * ((1 - alpha_head_t_minus_one) / (1 - alpha_head))
+            alpha_head_t_minus_one = alpha_head
 
         # if T-1 > t > 0:
         #     new_value + z * torch.sqrt(diffusion_betas[t+1])
