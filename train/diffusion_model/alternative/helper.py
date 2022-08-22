@@ -237,6 +237,7 @@ def sample_timestep(x, t):
         noise = torch.randn_like(x)
         return model_mean + torch.sqrt(posterior_variance_t) * noise
 
+device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda")
 
 @torch.no_grad()
 def sample_plot_image():
