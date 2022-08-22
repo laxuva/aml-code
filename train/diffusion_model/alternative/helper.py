@@ -62,7 +62,7 @@ sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
 IMG_SIZE = 64
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 
 
 def load_transformed_dataset():
@@ -72,7 +72,7 @@ def load_transformed_dataset():
         preload_percentage=0.2,
         device=torch.device("cuda"),
         transforms=[
-            # transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.Resize((IMG_SIZE, IMG_SIZE)),
             transforms.Lambda(lambda t: (t * 2) - 1)
         ]
     )
@@ -82,7 +82,7 @@ def load_transformed_dataset():
         preload_percentage=0.2,
         device=torch.device("cuda"),
         transforms=[
-            # transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.Resize((IMG_SIZE, IMG_SIZE)),
             transforms.Lambda(lambda t: (t * 2) - 1)
         ]
     )
