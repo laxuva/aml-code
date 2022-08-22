@@ -22,7 +22,8 @@ class DiffusionModelTrainer(GeneralTrainer):
             train_config["diffusion_steps"]
         ).to(device)
 
-        self.loss_function = torch.nn.MSELoss()
+        # self.loss_function = torch.nn.MSELoss()
+        self.loss_function = torch.nn.L1Loss()
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss")
 
@@ -83,27 +84,35 @@ class DiffusionModelTrainer(GeneralTrainer):
         img_shape = list(img.shape)
         img_shape[1] = img_shape[1] + 1
         img_with_t = torch.ones(img_shape).to(device)
+
+        t = torch.randint(0,
+                          T,
+                          (img_shape[0],),
+                          device=device).long()
+
         losses = list()
 
-        for t in range(1, T+1):
-            if train:
-                self.optimizer.zero_grad()
+        if train:
+            self.optimizer.zero_grad()
 
-            e = torch.normal(0,
-                             1,
-                             img.shape).to(device)
-            alpha = torch.prod(1 - self.diffusion_betas[:t])
-            input_for_model = torch.clip(torch.sqrt(alpha) * img + torch.sqrt(1 - alpha) * e, -1, 1)
-            img_with_t[:, :3, :, :] = input_for_model
-            img_with_t[:, 3, :, :] = alpha
-            e_pred = self.model.forward(img_with_t)
+        e = torch.normal(0,
+                         1,
+                         img.shape).to(device)
+        # alpha = torch.prod(1 - self.diffusion_betas[:t])
+        for idx, t_b in enumerate(t):
+            alpha = torch.prod(1 - self.diffusion_betas[:t_b])
+            input_for_model = torch.clip(torch.sqrt(alpha) * img[idx] + torch.sqrt(1 - alpha) * e[idx], -1, 1)
+            img_with_t[idx, :3, :, :] = input_for_model
+            img_with_t[idx, 3, :, :] = alpha
 
-            loss = self.loss_function(e_pred, e)
-            losses.append(loss)
+        e_pred = self.model.forward(img_with_t)
 
-            if train:
-                loss.backward()
-                self.optimizer.step()
+        loss = self.loss_function(e_pred, e)
+        losses.append(loss)
+
+        if train:
+            loss.backward()
+            self.optimizer.step()
 
         return torch.mean(torch.Tensor(losses))
 
