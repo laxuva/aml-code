@@ -62,10 +62,10 @@ sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
 IMG_SIZE = 128
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 BASE_DATA_PATH = Path("~/Documents/data/aml")
-PRELOAD_PERCENTAGE = 0.9
+PRELOAD_PERCENTAGE = 0.5
 
 
 def load_transformed_dataset():
