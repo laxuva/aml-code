@@ -3,6 +3,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 from torchvision.transforms import ToTensor, ToPILImage
+from tqdm import tqdm
 
 from network.segmentation.unet import UNet
 from utils.config_parser import ConfigParser
@@ -12,7 +13,7 @@ def do_multiple_diffusion_steps(img_0, t, diffusion_betas):
     alpha_t = torch.prod(1 - diffusion_betas[:t])
     return torch.normal(alpha_t * img_0, (1 - alpha_t))
 
-
+@torch.no_grad()
 def test_prediction(
         model_path="../train/best_model_12_epochs.pt",
         image_path="D:/aml/localData/masked128png/00000_Mask.png",
@@ -21,10 +22,9 @@ def test_prediction(
 ):
     config = ConfigParser.read("../configs/debugging_diffusion_model.yaml")
     image_path = Path(image_path).expanduser()
-    label_path = Path(label_path).expanduser()
     out_path = Path(out_path).expanduser()
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    device = torch.device("cpu")
+
 
     diffusion_betas = torch.linspace(
         config["training"]["diffusion_beta_1"],
@@ -41,23 +41,48 @@ def test_prediction(
 
     x = ToTensor()(Image.open(image_path)).to(device)[None, :]
 
-    img_t = do_multiple_diffusion_steps(x, T, diffusion_betas)
+    img_shape = list(x.shape)
+    z = torch.normal(0,
+                     1,
+                     img_shape).to(device)
 
-    for t in range(T, 0, -1):
-        ToPILImage()(img_t[0]).save(out_path.joinpath(f"orig_img_{t}.png"))
-        img_t = do_multiple_diffusion_steps(x,
-                                            t,
-                                            diffusion_betas)
-        noise_to_reduce = model.forward(img_t)
-        ToPILImage()(noise_to_reduce[0]).save(out_path.joinpath(f"img_{t}.png"))
+    img_shape[1] = img_shape[1] + 1
+    img_with_t = torch.ones(img_shape).to(device)
+    img_with_t[:, :3, :, :] = do_multiple_diffusion_steps(x,
+                                        T,
+                                        diffusion_betas)
+    alpha_head_t_minus_one = 0
+    for t in tqdm(range(T-1, -1, -1)):
+
+        # img_with_t[:,:3,:,:] = do_multiple_diffusion_steps(x,
+        #                                     t,
+        #                                     diffusion_betas)
+        alpha_head = torch.prod(1 - diffusion_betas[:t]).to(device)
+        img_with_t[:, 3, :, :] = alpha_head
+        alpha = torch.sqrt(1 - diffusion_betas[t]).to(device)
+        noise_to_reduce = model.forward(img_with_t)
+        new_value = 1 / torch.sqrt(alpha) * (img_with_t[:, :3] - (1-alpha) / torch.sqrt(1 - alpha_head) * noise_to_reduce)
+        # if  t > 0:
+        #     new_value + z * ((1 - alpha_head_t_minus_one) / (1 - alpha_head))
+        #     alpha_head_t_minus_one = alpha_head
+
+        # if T-1 > t > 0:
+        #     new_value + z * torch.sqrt(diffusion_betas[t+1])
+
+
+        ToPILImage()(noise_to_reduce[0]).save(out_path.joinpath(f"predicted_noise{t}.png"))
+        ToPILImage()(new_value[0]).save(out_path.joinpath(f"predicted_new_value{t}.png"))
+
+        img_with_t[:, :3, :, :] = new_value
+        ToPILImage()(img_with_t[0, :3]).save(out_path.joinpath(f"img_t{t}.png"))
 
         # img_t in next step
-        img_t -= noise_to_reduce
+
         # img_t[seg_mask == 0] = do_multiple_diffusion_steps(x, t, diffusion_betas)[seg_mask == 0].detach()
 
-    img_0_pred = img_t - model.forward(img_t)
-
-    ToPILImage()(img_0_pred[0]).save(out_path.joinpath("img_0.png"))
+    # img_0_pred = img_with_t[:,:3,:,:] - model.forward(img_with_t)
+    #
+    # ToPILImage()(img_0_pred[0]).save(out_path.joinpath("img_0.png"))
 
     # img_final = x.clone()
     # img_final[seg_mask != 0] = img_0_pred[seg_mask != 0]
