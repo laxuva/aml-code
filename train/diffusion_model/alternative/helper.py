@@ -3,7 +3,6 @@ Adapted from: https://colab.research.google.com/drive/1sjy9odlSSy0RBVgMTgP7s99NX
 Video: https://www.youtube.com/watch?v=a4Yfz2FxXiY
 """
 
-
 import math
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from matplotlib import pyplot as plt
 from torch import device, nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from torch.optim import Adam
 
 from data.diffusion_model_dataset import DiffusionModelDataset
 
@@ -61,15 +61,18 @@ sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
 sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
-IMG_SIZE = 64
+IMG_SIZE = 128
 BATCH_SIZE = 128
+
+BASE_DATA_PATH = Path("~/Documents/data/aml")
+PRELOAD_PERCENTAGE = 1
 
 
 def load_transformed_dataset():
     train = DiffusionModelDataset.load_from_label_file(
-        "~/Documents/data/aml/train_dataset.json",
-        image_path="~/Documents/data/aml/original128png",
-        preload_percentage=1,
+        str(BASE_DATA_PATH.joinpath("train_dataset.json")),
+        image_path=str(BASE_DATA_PATH.joinpath("original128png")),
+        preload_percentage=PRELOAD_PERCENTAGE,
         device=torch.device("cuda"),
         transforms=[
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
@@ -77,9 +80,9 @@ def load_transformed_dataset():
         ]
     )
     test = DiffusionModelDataset.load_from_label_file(
-        "~/Documents/data/aml/val_dataset.json",
-        image_path="~/Documents/data/aml/original128png",
-        preload_percentage=1,
+        str(BASE_DATA_PATH.joinpath("val_dataset.json")),
+        image_path=str(BASE_DATA_PATH.joinpath("original128png")),
+        preload_percentage=PRELOAD_PERCENTAGE,
         device=torch.device("cuda"),
         transforms=[
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
@@ -183,12 +186,11 @@ class SimpleUnet(nn.Module):
         self.conv0 = nn.Conv2d(image_channels, down_channels[0], 3, padding=1)
 
         # Downsample
-        self.downs = nn.ModuleList([Block(down_channels[i], down_channels[i + 1], \
-                                          time_emb_dim) \
+        self.downs = nn.ModuleList([Block(down_channels[i], down_channels[i + 1], time_emb_dim)
                                     for i in range(len(down_channels) - 1)])
         # Upsample
-        self.ups = nn.ModuleList([Block(up_channels[i], up_channels[i + 1], \
-                                        time_emb_dim, up=True) \
+        self.ups = nn.ModuleList([Block(up_channels[i], up_channels[i + 1],
+                                        time_emb_dim, up=True)
                                   for i in range(len(up_channels) - 1)])
 
         self.output = nn.Conv2d(up_channels[-1], 3, out_dim)
@@ -259,31 +261,14 @@ def sample_plot_image():
     plt.show()
 
 
-if __name__ == '__main__':
-    # # Simulate forward diffusion
-    # image = next(iter(dataloader))[0]
-    #
-    # plt.figure(figsize=(15, 15))
-    # plt.axis('off')
-    # num_images = 10
-    # stepsize = int(T / num_images)
-    #
-    # for idx in range(0, T, stepsize):
-    #     t = torch.Tensor([idx]).type(torch.int64)
-    #     plt.subplot(1, num_images + 1, (idx // stepsize) + 1)
-    #     image, noise = forward_diffusion_sample(image, t)
-    #     show_tensor_image(image)
-    # plt.show()
+model = SimpleUnet()
 
-    model = SimpleUnet()
-    # print("Num params: ", sum(p.numel() for p in model.parameters()))
 
-    from torch.optim import Adam
-
+def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     optimizer = Adam(model.parameters(), lr=0.001)
-    epochs = 100  # Try more!
+    epochs = 250  # Try more!
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
     for epoch in range(epochs):
@@ -301,3 +286,7 @@ if __name__ == '__main__':
 
         # lr_scheduler.step()
         torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
+
+
+if __name__ == '__main__':
+    main()
