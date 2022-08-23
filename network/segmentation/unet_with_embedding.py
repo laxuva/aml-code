@@ -178,8 +178,8 @@ class UNet(torch.nn.Module):
         self.upsampling_layers = torch.nn.Sequential(*self.upsampling_layers)
 
         self.final_layer = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=channels_per_depth[-1], out_channels=final_out_channels, kernel_size=1),
-            torch.nn.Sigmoid() if output_activation_function == "Sigmoid" else torch.nn.Tanh())
+            torch.nn.Conv2d(in_channels=channels_per_depth[-1], out_channels=final_out_channels, kernel_size=1))
+            # torch.nn.Sigmoid() if output_activation_function == "Sigmoid" else torch.nn.Tanh())
 
     def forward(self, x, t):
         skip_outputs = list()
