@@ -52,6 +52,9 @@ def forward_diffusion_sample(x_0, t, device="cpu"):
 T = 300
 betas = linear_beta_schedule(timesteps=T)
 
+def get_betas():
+    return betas
+
 # Pre-calculate different terms for closed form
 alphas = 1. - betas
 alphas_cumprod = torch.cumprod(alphas, axis=0)
@@ -93,7 +96,7 @@ def load_transformed_dataset(device="cpu"):
     return torch.utils.data.ConcatDataset([train, test])
 
 
-def show_tensor_image(image):
+def show_tensor_image(image, show=True):
     reverse_transforms = transforms.Compose([
         transforms.Lambda(lambda t: (t + 1) / 2),
         transforms.Lambda(lambda t: t.permute(1, 2, 0)),  # CHW to HWC
@@ -105,7 +108,10 @@ def show_tensor_image(image):
     # Take first image of batch
     if len(image.shape) == 4:
         image = image[0, :, :, :]
-    plt.imshow(reverse_transforms(image))
+    if show:
+        plt.imshow(reverse_transforms(image))
+    else:
+        return reverse_transforms(image)
 
 
 def get_loss(model, x_0, t, device="cpu"):
