@@ -61,16 +61,16 @@ sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
 sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
-IMG_SIZE = 128
-BATCH_SIZE = 64
+IMG_SIZE = 64
+BATCH_SIZE = 128
 
-BASE_DATA_PATH = Path("~/Documents/data/aml")
+BASE_DATA_PATH = Path("C:/Users/Christoph/Desktop/dataset")
 PRELOAD_PERCENTAGE = 0.5
 
 
 def load_transformed_dataset():
     train = DiffusionModelDataset.load_from_label_file(
-        str(BASE_DATA_PATH.joinpath("train_dataset.json")),
+        str(BASE_DATA_PATH.joinpath("train_dataset_medium_dm.json")),
         image_path=str(BASE_DATA_PATH.joinpath("original128png")),
         preload_percentage=PRELOAD_PERCENTAGE,
         device=torch.device("cuda"),
@@ -80,7 +80,7 @@ def load_transformed_dataset():
         ]
     )
     test = DiffusionModelDataset.load_from_label_file(
-        str(BASE_DATA_PATH.joinpath("val_dataset.json")),
+        str(BASE_DATA_PATH.joinpath("val_dataset_medium_dm.json")),
         image_path=str(BASE_DATA_PATH.joinpath("original128png")),
         preload_percentage=PRELOAD_PERCENTAGE,
         device=torch.device("cuda"),
@@ -237,10 +237,12 @@ def sample_timestep(x, t):
         noise = torch.randn_like(x)
         return model_mean + torch.sqrt(posterior_variance_t) * noise
 
+
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda")
 
+
 @torch.no_grad()
-def sample_plot_image():
+def sample_plot_image(epoch=None):
     # Sample noise
     img_size = IMG_SIZE
     img = torch.randn((1, 3, img_size, img_size), device=device)
@@ -254,41 +256,53 @@ def sample_plot_image():
         img = sample_timestep(img, t)
         if i % stepsize == 0:
             plt.subplot(1, num_images, i // stepsize + 1)
+            plt.title(f"Step: {i}")
             show_tensor_image(img.detach().cpu())
+    if epoch is not None:
+        plt.suptitle(f"Epoch: {epoch}")
     plt.show()
 
 
 model = SimpleUnet()
 
+train = True
+
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
-    optimizer = Adam(model.parameters(), lr=0.001)
-    epochs = 250  # Try more!
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
     data = load_transformed_dataset()
     dataloader = DataLoader(data,
                             batch_size=BATCH_SIZE,
                             shuffle=True,
                             drop_last=True)
 
+    if train:
+        model.to(device)
+        optimizer = Adam(model.parameters(), lr=0.001)
+        epochs = 250  # Try more!
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.5)
 
-    for epoch in range(epochs):
-        for step, batch in tqdm.tqdm(enumerate(dataloader)):
-            optimizer.zero_grad()
+        for epoch in range(epochs):
+            for step, batch in tqdm.tqdm(enumerate(dataloader)):
+                optimizer.zero_grad()
 
-            t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-            loss = get_loss(model, batch[0], t)
-            loss.backward()
-            optimizer.step()
+                t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
+                loss = get_loss(model, batch[0], t)
+                loss.backward()
+                optimizer.step()
 
-            if step == 0:
-                print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                # sample_plot_image()
+                if step == 0:
+                    print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
+                    sample_plot_image(epoch)
 
-        # lr_scheduler.step()
-        torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
+            lr_scheduler.step()
+            torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
+    else:
+        model.load_state_dict(torch.load(Path("./model.pt"), map_location=device))
+        model.eval()
+
+        sample_plot_image()
 
 
 if __name__ == '__main__':
