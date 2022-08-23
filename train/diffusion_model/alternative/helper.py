@@ -261,7 +261,6 @@ def sample_plot_image(model, device="cpu", epoch=None):
 
 
 def main(train=True, modelpath="./model.pt"):
-    device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda")
     model = SimpleUnet()
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
