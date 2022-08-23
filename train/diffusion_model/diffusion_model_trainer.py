@@ -35,12 +35,9 @@ class DiffusionModelTrainer(GeneralTrainer):
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         T = len(self.diffusion_betas)
 
-        img = img * 2 - 1  # zentralization with normal distribution
+        img = img * 2 - 1  # centralization with normal distribution
         img_shape = list(img.shape)
-        t = torch.randint(0,
-                          T,
-                          (img_shape[0],),
-                          device=device).long()
+        t = torch.randint(0, T, (img_shape[0],), device=device).long()
 
         losses = list()
 
