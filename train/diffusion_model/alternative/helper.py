@@ -62,28 +62,28 @@ sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
 IMG_SIZE = 128
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 
-BASE_DATA_PATH = Path("C:/Users/Christoph/Desktop/dataset")
-PRELOAD_PERCENTAGE = 0.5
+BASE_DATA_PATH = Path("~/Documents/data/aml/")
+PRELOAD_PERCENTAGE = 0.25
 
 
-def load_transformed_dataset():
+def load_transformed_dataset(device="cpu"):
     train = DiffusionModelDataset.load_from_label_file(
-        str(BASE_DATA_PATH.joinpath("train_dataset_medium_dm.json")),
+        str(BASE_DATA_PATH.joinpath("train_dataset_small.json")),
         image_path=str(BASE_DATA_PATH.joinpath("original128png")),
         preload_percentage=PRELOAD_PERCENTAGE,
-        device=torch.device("cuda"),
+        device=torch.device(device),
         transforms=[
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
             transforms.Lambda(lambda t: (t * 2) - 1)
         ]
     )
     test = DiffusionModelDataset.load_from_label_file(
-        str(BASE_DATA_PATH.joinpath("val_dataset_medium_dm.json")),
+        str(BASE_DATA_PATH.joinpath("val_dataset_small.json")),
         image_path=str(BASE_DATA_PATH.joinpath("original128png")),
         preload_percentage=PRELOAD_PERCENTAGE,
-        device=torch.device("cuda"),
+        device=torch.device(device),
         transforms=[
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
             transforms.Lambda(lambda t: (t * 2) - 1)
@@ -108,7 +108,7 @@ def show_tensor_image(image):
     plt.imshow(reverse_transforms(image))
 
 
-def get_loss(model, x_0, t):
+def get_loss(model, x_0, t, device="cpu"):
     x_noisy, noise = forward_diffusion_sample(x_0, t, device)
     noise_pred = model(x_noisy, t)
     return F.l1_loss(noise, noise_pred)
@@ -213,7 +213,7 @@ class SimpleUnet(nn.Module):
 
 
 @torch.no_grad()
-def sample_timestep(x, t):
+def sample_timestep(x, t, model):
     """
     Calls the model to predict the noise in the image and returns
     the denoised image.
@@ -238,11 +238,8 @@ def sample_timestep(x, t):
         return model_mean + torch.sqrt(posterior_variance_t) * noise
 
 
-device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda")
-
-
 @torch.no_grad()
-def sample_plot_image(epoch=None):
+def sample_plot_image(model, device="cpu", epoch=None):
     # Sample noise
     img_size = IMG_SIZE
     img = torch.randn((1, 3, img_size, img_size), device=device)
@@ -253,7 +250,7 @@ def sample_plot_image(epoch=None):
 
     for i in range(0, T)[::-1]:
         t = torch.full((1,), i, device=device, dtype=torch.long)
-        img = sample_timestep(img, t)
+        img = sample_timestep(img, t, model)
         if i % stepsize == 0:
             plt.subplot(1, num_images, i // stepsize + 1)
             plt.title(f"Step: {i}")
@@ -263,15 +260,14 @@ def sample_plot_image(epoch=None):
     plt.show()
 
 
-model = SimpleUnet()
-
-
 def main(train=True, modelpath="./model.pt"):
+    device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda")
+    model = SimpleUnet()
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
 
     if train:
-        data = load_transformed_dataset()
+        data = load_transformed_dataset(device)
         dataloader = DataLoader(data,
                                 batch_size=BATCH_SIZE,
                                 shuffle=True,
@@ -285,13 +281,13 @@ def main(train=True, modelpath="./model.pt"):
                 optimizer.zero_grad()
 
                 t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-                loss = get_loss(model, batch[0], t)
+                loss = get_loss(model, batch[0], t, device)
                 loss.backward()
                 optimizer.step()
 
                 if step == 0:
                     print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                    sample_plot_image(epoch)
+                    sample_plot_image(model, epoch)
 
             lr_scheduler.step()
             torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
@@ -299,7 +295,7 @@ def main(train=True, modelpath="./model.pt"):
         model.load_state_dict(torch.load(Path(modelpath), map_location=device))
         # model.eval()
 
-        sample_plot_image()
+        sample_plot_image(model)
 
 
 if __name__ == '__main__':
