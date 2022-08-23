@@ -61,7 +61,7 @@ sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
 sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
-IMG_SIZE = 64
+IMG_SIZE = 128
 BATCH_SIZE = 128
 
 BASE_DATA_PATH = Path("C:/Users/Christoph/Desktop/dataset")
@@ -265,19 +265,17 @@ def sample_plot_image(epoch=None):
 
 model = SimpleUnet()
 
-train = True
 
-
-def main():
+def main(train=True, modelpath="./model.pt"):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
-    data = load_transformed_dataset()
-    dataloader = DataLoader(data,
-                            batch_size=BATCH_SIZE,
-                            shuffle=True,
-                            drop_last=True)
 
     if train:
+        data = load_transformed_dataset()
+        dataloader = DataLoader(data,
+                                batch_size=BATCH_SIZE,
+                                shuffle=True,
+                                drop_last=True)
         model.to(device)
         optimizer = Adam(model.parameters(), lr=0.001)
         epochs = 250  # Try more!
@@ -299,7 +297,7 @@ def main():
             lr_scheduler.step()
             torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
     else:
-        model.load_state_dict(torch.load(Path("./model.pt"), map_location=device))
+        model.load_state_dict(torch.load(Path(modelpath), map_location=device))
         model.eval()
 
         sample_plot_image()
