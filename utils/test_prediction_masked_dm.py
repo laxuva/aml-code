@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision.transforms import ToTensor, ToPILImage
 from tqdm import tqdm
 
-from train.diffusion_model.alternative.helper import SimpleUnet, sample_timestep, show_tensor_image, forward_diffusion_sample, get_betas
+from train.diffusion_model.alternative.diffusion_model import SimpleUnet, sample_timestep, show_tensor_image, forward_diffusion_sample, get_betas
 
 @torch.no_grad()
 def sample_plot_image(model, img, seg_mask, U=3, T=300, device="cpu", epoch=None, img_size=128):
