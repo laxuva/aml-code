@@ -5,7 +5,7 @@ from PIL import Image
 from torchvision.transforms import ToTensor, ToPILImage
 from tqdm import tqdm
 
-from network.segmentation.unet import UNet
+from network.segmentation.unet_with_embedding import UNet
 from utils.config_parser import ConfigParser
 
 
@@ -37,56 +37,32 @@ def test_prediction(
     model = UNet(**config["model"]["params"])
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
+    # model.eval()
 
     x = ToTensor()(Image.open(image_path)).to(device)[None, :]
 
     img_shape = list(x.shape)
-    z = torch.normal(0,
+    img = torch.normal(0,
                      1,
-                     img_shape).to(device)
-
-    img_shape[1] = img_shape[1] + 1
-    img_with_t = torch.ones(img_shape).to(device)
-    img_with_t[:, :3, :, :] = do_multiple_diffusion_steps(x,
-                                        T,
-                                        diffusion_betas)
+                     img_shape).to(device) * 2 - 1
     alpha_head_t_minus_one = 0
     for t in tqdm(range(T-1, -1, -1)):
-
-        # img_with_t[:,:3,:,:] = do_multiple_diffusion_steps(x,
-        #                                     t,
-        #                                     diffusion_betas)
         alpha_head = torch.prod(1 - diffusion_betas[:t]).to(device)
-        img_with_t[:, 3, :, :] = alpha_head
         alpha = torch.sqrt(1 - diffusion_betas[t]).to(device)
-        noise_to_reduce = model.forward(img_with_t)
-        new_value = 1 / torch.sqrt(alpha) * (img_with_t[:, :3] - (1-alpha) / torch.sqrt(1 - alpha_head) * noise_to_reduce)
-        if  t > 0:
-            new_value + z * ((1 - alpha_head_t_minus_one) / (1 - alpha_head))
+        noise_to_reduce = model.forward(img, torch.tensor([t]).to(device))
+        new_value = 1 / torch.sqrt(alpha) * (img - (1-alpha) / torch.sqrt(1 - alpha_head) * noise_to_reduce)
+        if t > 0:
+            z = torch.normal(0,
+                 1,
+                 img_shape)[:,:3,:,:].to(device)
+            new_value += z * ((1 - alpha_head_t_minus_one) / (1 - alpha_head))
             alpha_head_t_minus_one = alpha_head
 
         # if T-1 > t > 0:
-        #     new_value + z * torch.sqrt(diffusion_betas[t+1])
-
-
+        #     new_value = new_value + z * torch.sqrt(diffusion_betas[t+1])
+        img = new_value
         ToPILImage()(noise_to_reduce[0]).save(out_path.joinpath(f"predicted_noise{t}.png"))
         ToPILImage()(new_value[0]).save(out_path.joinpath(f"predicted_new_value{t}.png"))
-
-        img_with_t[:, :3, :, :] = new_value
-        ToPILImage()(img_with_t[0, :3]).save(out_path.joinpath(f"img_t{t}.png"))
-
-        # img_t in next step
-
-        # img_t[seg_mask == 0] = do_multiple_diffusion_steps(x, t, diffusion_betas)[seg_mask == 0].detach()
-
-    # img_0_pred = img_with_t[:,:3,:,:] - model.forward(img_with_t)
-    #
-    # ToPILImage()(img_0_pred[0]).save(out_path.joinpath("img_0.png"))
-
-    # img_final = x.clone()
-    # img_final[seg_mask != 0] = img_0_pred[seg_mask != 0]
-    # ToPILImage()(img_final[0]).save(out_path.joinpath("img_0_final.png"))
 
 
 if __name__ == '__main__':
