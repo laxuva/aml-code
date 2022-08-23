@@ -3,7 +3,7 @@ from typing import Dict, Any
 import pytorch_lightning as pl
 import torch
 
-from network.segmentation.unet import UNet
+from network.segmentation.unet_with_embedding import UNet
 from train.utils.metrics_logger import MetricsLogger
 
 
