@@ -276,7 +276,6 @@ def main(train=True, modelpath="./model.pt"):
                                 batch_size=BATCH_SIZE,
                                 shuffle=True,
                                 drop_last=True)
-        model.to(device)
         optimizer = Adam(model.parameters(), lr=0.001)
         epochs = 250  # Try more!
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.5)
@@ -298,7 +297,7 @@ def main(train=True, modelpath="./model.pt"):
             torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
     else:
         model.load_state_dict(torch.load(Path(modelpath), map_location=device))
-        model.eval()
+        # model.eval()
 
         sample_plot_image()
 
