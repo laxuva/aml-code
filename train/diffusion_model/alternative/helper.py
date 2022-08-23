@@ -286,7 +286,7 @@ def main(train=True, modelpath="./model.pt"):
 
                 if step == 0:
                     print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                    sample_plot_image(model, epoch)
+                    sample_plot_image(model, device, epoch)
 
             lr_scheduler.step()
             torch.save(model.state_dict(), Path(".").joinpath("model.pt"))
@@ -294,7 +294,7 @@ def main(train=True, modelpath="./model.pt"):
         model.load_state_dict(torch.load(Path(modelpath), map_location=device))
         # model.eval()
 
-        sample_plot_image(model)
+        sample_plot_image(model, device)
 
 
 if __name__ == '__main__':
