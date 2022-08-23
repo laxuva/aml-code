@@ -7,6 +7,9 @@ from torchvision.transforms import ToTensor, ToPILImage
 from tqdm import tqdm
 
 from train.diffusion_model.alternative.diffusion_model import SimpleUnet, sample_timestep, show_tensor_image, forward_diffusion_sample, get_betas
+from network.segmentation.unet_with_embedding import UNet
+from utils.config_parser import ConfigParser
+
 
 @torch.no_grad()
 def sample_plot_image(model, img, seg_mask, U=3, T=300, device="cpu", epoch=None, img_size=128):
@@ -45,14 +48,15 @@ def sample_plot_image(model, img, seg_mask, U=3, T=300, device="cpu", epoch=None
 
 
 if __name__ == '__main__':
-    model_path = "../evaluation/dm/model.pt"
+    model_path = "../evaluation/dm/model_new.pt"
     image_path = "~\\Documents\\data\\aml\\masked128png\\00018.png"
     label_path = "~\\Documents\\data\\aml\\seg_mask128png\\00018.png"
     out_path = "~\\Documents\\data\\aml\\out"
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model = SimpleUnet()
+    config = ConfigParser.read("../configs/debugging_diffusion_model.yaml")
+    model = UNet(**config["model"]["params"])
     model.to(device)
     model.load_state_dict(torch.load(Path(model_path),
                                      map_location=device))

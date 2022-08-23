@@ -27,10 +27,6 @@ class DiffusionModelTrainer(GeneralTrainer):
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss")
 
-    def _do_multiple_diffusion_steps(self, img_0, t): # formula 7
-        alpha_t = torch.prod(1 - self.diffusion_betas[:t])
-        return torch.normal(alpha_t * img_0, (1 - alpha_t))
-
     def backward_diffusion_process(self, img, train: bool = True):
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         T = len(self.diffusion_betas)
