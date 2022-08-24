@@ -1,11 +1,14 @@
+# project files and folders
 .idea
 ./venv/
-configs/debugging.yaml
 *.pyc
+
+# training outputs
+/train/training_results/
 train/best_model.pt
 train/final_model.pt
 train/train_info.json
-/configs/debugging_autoencoder.yaml
-/configs/debugging_gan.yaml
-/configs/debugging_diffusion_model.yaml
-/train/diffusion_model/alternative/stanford_cars/
+
+# trained models used in evaluation
+/evaluation/autoencoder/best_model.pt
+/evaluation/diffusion_model/best_model.pt

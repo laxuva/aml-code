@@ -1,15 +1,15 @@
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 
 import numpy as np
-import pytorch_lightning as pl
 import torch
 
-from network.segmentation.unet import UNet
 from network.discriminator import Discriminator
+from network.unet import UNet
+from train.trainer.trainer_base import TrainerBase
 from train.utils.metrics_logger import MetricsLogger
 
 
-class AdversarialAutoencoderTrainer(pl.LightningModule):
+class AdversarialAutoencoderTrainer(TrainerBase):
     def __init__(
             self,
             unet_config: Dict[str, Any],
@@ -18,7 +18,7 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
             val_dataset,
             device: torch.device = torch.device("cpu"),
     ):
-        super(AdversarialAutoencoderTrainer, self).__init__()
+        super(AdversarialAutoencoderTrainer, self).__init__(device)
         self.model = UNet(**unet_config).to(device)
         self.discriminator = Discriminator(3).to(device)
 
@@ -65,9 +65,6 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
     def compute_reconstruction_loss(self, y_pred, y, x):
         seg_map = self.get_segmentation_map(x)
         return self.reconstruction_loss_function(y_pred[seg_map], y[seg_map])
-
-    def configure_optimizers(self):
-        return [self.optimizer, self.lr_scheduler]
 
     def do_discriminator_steps(self, x):
         self.optimizer_discriminator.zero_grad()
@@ -125,9 +122,5 @@ class AdversarialAutoencoderTrainer(pl.LightningModule):
         return loss_autoencoder
 
     def end_epoch(self):
-        self.metrics_logger.end_epoch()
-        self.lr_scheduler.step()
+        super(AdversarialAutoencoderTrainer, self).end_epoch()
         self.lr_scheduler_discriminator.step()
-
-    def get_model(self):
-        return self.model

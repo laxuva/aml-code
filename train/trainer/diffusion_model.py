@@ -3,21 +3,36 @@ from typing import Dict, Any
 
 import matplotlib.pyplot as plt
 import torch
-
-from train.general_trainer import GeneralTrainer
-from train.utils.metrics_logger import MetricsLogger
 from torchvision.transforms import ToPILImage
 
+from network.unet_with_embedding import UNet
+from train.trainer.trainer_base import TrainerBase
+from train.utils.metrics_logger import MetricsLogger
 
-class DiffusionModelTrainer(GeneralTrainer):
+
+class DiffusionModelTrainer(TrainerBase):
     def __init__(
             self,
             unet_config: Dict[str, Any],
             train_config: Dict[str, Any],
             device: torch.device = torch.device("cpu")
     ):
-        super(DiffusionModelTrainer, self).__init__(unet_config, train_config, device)
-        self.used_device = device
+        super(DiffusionModelTrainer, self).__init__(device)
+
+        self.model = UNet(**unet_config).to(device)
+
+        self.optimizer = torch.optim.Adam(lr=train_config["learning_rate"], params=self.model.parameters())
+        self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
+
+        try:
+            self.loss_function = {
+                "L1Loss": torch.nn.L1Loss,
+                "MSELoss": torch.nn.MSELoss,
+                "SmoothL1Loss": torch.nn.SmoothL1Loss
+            }[train_config["loss_function"]]()
+        except KeyError:
+            raise KeyError(f"The given loss function {train_config['loss_function']} is not supported.")
+
         self.diffusion_betas = torch.linspace(
             train_config["diffusion_beta_1"],
             train_config["diffusion_beta_capital_t"],
@@ -25,11 +40,11 @@ class DiffusionModelTrainer(GeneralTrainer):
         ).to(self.used_device)
 
         self.show_sampled_images = train_config["show_sampled_images"]
-        self.sampled_images_location = Path(train_config["sampled_images_location"]) if "sampled_images_location" in train_config else None
-
-        # self.loss_function = torch.nn.MSELoss()
-        self.loss_function = torch.nn.L1Loss()
-        # self.loss_function = torch.nn.SmoothL1Loss()
+        self.sampled_images_location = (
+            Path(train_config["sampled_images_location"])
+            if "sampled_images_location" in train_config
+            else None
+        )
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss")
         self.epoch = 0
@@ -37,19 +52,17 @@ class DiffusionModelTrainer(GeneralTrainer):
     def backward_diffusion_process(self, img, train: bool = True):
         T = len(self.diffusion_betas)
 
-        img = img * 2 - 1  # centralization with normal distribution
-        img_shape = list(img.shape)
-        t = torch.randint(0, T, (img_shape[0],), device=self.used_device).long()
+        img = img * 2 - 1  # normalize to range [-1, 1]
+
+        t = torch.randint(0, T, (img.shape[0],), device=self.used_device).long()
 
         losses = list()
 
         if train:
             self.optimizer.zero_grad()
 
-        e = torch.normal(0,
-                         1,
-                         img.shape).to(self.used_device)
-        # alpha = torch.prod(1 - self.diffusion_betas[:t])
+        e = torch.normal(0, 1, img.shape).to(self.used_device)
+
         input_for_model = torch.zeros_like(img)
         for idx, t_b in enumerate(t):
             alpha = torch.prod(1 - self.diffusion_betas[:t_b])
@@ -69,14 +82,14 @@ class DiffusionModelTrainer(GeneralTrainer):
     def train_on_batch(self, x, y) -> float:
         return self.training_step(x, y).cpu().detach().item()
 
-    def training_step(self, img, seg_mask) -> torch.Tensor:
+    def training_step(self, img, _) -> torch.Tensor:
         loss = self.backward_diffusion_process(img)
 
         self.metrics_logger.log("train_loss", loss.cpu().detach().item())
 
         return loss
 
-    def validation_step(self, img, seg_mask) -> torch.Tensor:
+    def validation_step(self, img, _) -> torch.Tensor:
         loss = self.backward_diffusion_process(img, train=False)
 
         self.metrics_logger.log("val_loss", loss.cpu().detach().item())
@@ -85,6 +98,7 @@ class DiffusionModelTrainer(GeneralTrainer):
 
     def end_epoch(self):
         super(DiffusionModelTrainer, self).end_epoch()
+
         self.epoch += 1
         self.sample_plot_image()
 
@@ -118,6 +132,7 @@ class DiffusionModelTrainer(GeneralTrainer):
                 axes[idx].imshow(img_to_show)
                 axes[idx].set_title(t)
                 axes[idx].set_axis_off()
+
         if self.sampled_images_location is not None:
             plt.savefig(self.sampled_images_location.joinpath(f"epoch_{self.epoch}.pdf"), bbox_inches="tight")
         if self.show_sampled_images:

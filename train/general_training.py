@@ -1,34 +1,32 @@
-from typing import Dict, Any
 from pathlib import Path
+from typing import Dict, Any
 
 import numpy as np
-from torch.utils.data import DataLoader
 import torch
-
-from data.segmentation_dataset import SegmentationDataset
-from data.autoencoder_dataset import AutoencoderDataset
-from data.diffusion_model_dataset import DiffusionModelDataset
-from train.segmentation.unet_trainer import UNetTrainer
-from train.autoencoder.autoencoder_trainer import AutoencoderTrainer
-from train.autoencoder.adversarial_trainer import AdversarialAutoencoderTrainer
-from train.diffusion_model.diffusion_model_trainer import DiffusionModelTrainer
-from utils.config_parser import ConfigParser
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from datasets import SegmentationDataset, AutoencoderDataset, DiffusionModelDataset
+from train.trainer import AdversarialAutoencoderTrainer, AutoencoderTrainer, DiffusionModelTrainer, SegmentationTrainer
+from utils.config_parser import ConfigParser
 
 
 def train(config: Dict[str, Any]):
     train_config = config["training"]
-    out_path = Path(train_config["out_path"])
+    out_path = Path(train_config["out_path"]).expanduser()
+
+    if not out_path.exists():
+        out_path.mkdir()
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    if config["dataset"]["type"] == "SegmentationDataset":
-        dataset_class = SegmentationDataset
-    elif config["dataset"]["type"] == "AutoencoderDataset":
-        dataset_class = AutoencoderDataset
-    elif config["dataset"]["type"] == "DiffusionModelDataset":
-        dataset_class = DiffusionModelDataset
-    else:
+    try:
+        dataset_class = {
+            "SegmentationDataset": SegmentationDataset,
+            "AutoencoderDataset": AutoencoderDataset,
+            "DiffusionModelDataset": DiffusionModelDataset
+        }[config["dataset"]["type"]]
+    except KeyError:
         raise NotImplementedError(f"The dataset class {config['dataset']['type']} is not available")
 
     dataset_train = dataset_class.load_from_label_file(
@@ -46,15 +44,14 @@ def train(config: Dict[str, Any]):
     train_loader = DataLoader(dataset_train, **config["train_loader"])
     val_loader = DataLoader(dataset_val, **config["val_loader"])
 
-    if config["model"]["type"] == "UNetTrainer":
-        model_class = UNetTrainer
-    elif config["model"]["type"] == "AutoencoderTrainer":
-        model_class = AutoencoderTrainer
-    elif config["model"]["type"] == "AdversarialAutoencoderTrainer":
-        model_class = AdversarialAutoencoderTrainer
-    elif config["model"]["type"] == "DiffusionModelTrainer":
-        model_class = DiffusionModelTrainer
-    else:
+    try:
+        model_class = {
+            "SegmentationTrainer": SegmentationTrainer,
+            "AutoencoderTrainer": AutoencoderTrainer,
+            "AdversarialAutoencoderTrainer": AdversarialAutoencoderTrainer,
+            "DiffusionModelTrainer": DiffusionModelTrainer
+        }[config["model"]["type"]]
+    except KeyError:
         raise NotImplementedError(f"The model class {config['model']['type']} is not available")
 
     if model_class == AdversarialAutoencoderTrainer:
@@ -100,5 +97,4 @@ def train(config: Dict[str, Any]):
 
 
 if __name__ == '__main__':
-    # train(ConfigParser.read("../configs/debugging_autoencoder.yaml"))
-    train(ConfigParser.read("../configs/debugging_diffusion_model.yaml"))
+    train(ConfigParser.read("../configs/diffusion_model.yaml"))

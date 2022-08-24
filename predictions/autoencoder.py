@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,14 +7,17 @@ import torch
 from PIL import Image
 from torchvision.transforms import ToTensor, ToPILImage
 
-from network.segmentation.unet import UNet
+from network.unet import UNet
 from utils.config_parser import ConfigParser
 
 
-def test_prediction(model_path, image_path, seg_map_path):
-    config = ConfigParser.read("../configs/debugging_autoencoder.yaml")
+@torch.no_grad()
+def test_prediction(model_path, image_path, seg_map_path, config_file="../configs/autoencoder.yaml"):
+    config = ConfigParser.read(config_file)
     image_path = Path(image_path).expanduser()
     seg_map_path = Path(seg_map_path).expanduser()
+
+    to_tensor: Callable = ToTensor()
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -22,11 +26,13 @@ def test_prediction(model_path, image_path, seg_map_path):
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
-    y = ToTensor()(Image.open(image_path)).to(device)
-    seg_map = ToTensor()(Image.open(seg_map_path)).to(device)
+    y = to_tensor(Image.open(image_path)).to(device)
+    seg_map = to_tensor(Image.open(seg_map_path)).to(device)
+
     x = y.clone()
     x[:, seg_map[0] != 0] = 0
     x = torch.cat((x, seg_map))
+
     y_pred = model.forward(x[None, :])[0].cpu().detach()
 
     ToPILImage()(y_pred).save("./test.png")
@@ -54,11 +60,6 @@ def test_prediction(model_path, image_path, seg_map_path):
 if __name__ == '__main__':
     test_prediction(
         model_path="../evaluation/autoencoder/best_model.pt",
-        image_path="~\\Documents\\data\\aml\\original128png\\00018.png",
-        seg_map_path="~\\Documents\\data\\aml\\seg_mask128png\\00018.png"
+        image_path="~/Documents/data/aml/original128png/00018.png",
+        seg_map_path="~/Documents/data/aml/seg_mask128png/00018.png"
     )
-    # test_prediction(
-    #     model_path="../evaluation/autoencoder/best_model.pt",
-    #     image_path="~\\Documents\\data\\aml\\test\\test_1.png",
-    #     seg_map_path="~\\Documents\\data\\aml\\test\\test_1_label.png"
-    # )

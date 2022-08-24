@@ -6,35 +6,28 @@ from PIL import Image
 from torchvision.transforms import ToTensor
 
 from metrics.segmentation.iou import iou
-from network.segmentation.unet import UNet
+from network.unet import UNet
 from plots.segmentation_overlay import SegmentationOverlay
-from train.segmentation.unet_trainer import UNetTrainer
 from utils.config_parser import ConfigParser
 
 
-def test_prediction(
-        model_path="../train/best_model_12_epochs.pt",
-        image_path="D:/aml/localData/masked128png/00000_Mask.png",
-        label_path="D:/aml/localData/seg_mask128png/00000_Mask.png",
-        th: float = 0.25
-):
-    config = ConfigParser.read("../configs/debugging.yaml")
+@torch.no_grad()
+def test_prediction(model_path, image_path, label_path, th=0.25, config_file="../configs/segmentation.yaml"):
+    config = ConfigParser.read(config_file)
     image_path = Path(image_path).expanduser()
     label_path = Path(label_path).expanduser()
 
+    to_tensor = ToTensor()
+
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    try:
-        model = UNet(**config["model"])
-        model.to(device)
-        model.load_state_dict(torch.load(model_path, map_location=device))
-    except RuntimeError:
-        model = UNetTrainer(config["model"], config["training"], device=device)
-        model.load_state_dict(torch.load(model_path, map_location=device))
-
+    model = UNet(**config["model"])
+    model.to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
-    x = ToTensor()(Image.open(image_path)).to(device)
-    y = ToTensor()(Image.open(label_path))
+
+    x = to_tensor(Image.open(image_path)).to(device)
+    y = to_tensor(Image.open(label_path))
     y_pred = model.forward(x[None, :])[0].cpu().detach()
 
     print(f"y_pred min: {y_pred.min().item()}; max: {y_pred.max().item()}")
@@ -56,7 +49,7 @@ def test_prediction(
 if __name__ == '__main__':
     test_prediction(
         model_path="../train/final_model.pt",
-        image_path="~\\Documents\\data\\aml\\masked128png\\45844_Mask.png",
-        label_path="~\\Documents\\data\\aml\\seg_mask128png\\45844_seg.png",
+        image_path="~/Documents/data/aml/masked128png/45844_Mask.png",
+        label_path="~/Documents/data/aml/seg_mask128png/45844_seg.png",
         th=0.002
     )

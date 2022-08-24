@@ -5,23 +5,13 @@ from PIL import Image
 from torchvision.transforms import ToTensor, ToPILImage
 from tqdm import tqdm
 
-from network.segmentation.unet_with_embedding import UNet
+from network.unet_with_embedding import UNet
 from utils.config_parser import ConfigParser
 
 
-def do_multiple_diffusion_steps(img_0, t, diffusion_betas):
-    alpha_t = torch.prod(1 - diffusion_betas[:t])
-    return torch.normal(alpha_t * img_0, (1 - alpha_t))
-
-
 @torch.no_grad()
-def test_prediction(
-        model_path="../train/best_model_12_epochs.pt",
-        image_path="D:/aml/localData/masked128png/00000_Mask.png",
-        label_path="D:/aml/localData/seg_mask128png/00000_Mask.png",
-        out_path="~\\Documents\\data\\aml\\out"
-):
-    config = ConfigParser.read("../configs/debugging_diffusion_model.yaml")
+def test_prediction(model_path, image_path, out_path, config_file="../configs/diffusion_model.yaml"):
+    config = ConfigParser.read(config_file)
 
     image_path = Path(image_path).expanduser()
     out_path = Path(out_path).expanduser()
@@ -71,8 +61,7 @@ def test_prediction(
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../evaluation/dm/best_model.pt",
-        image_path="~\\Documents\\data\\aml\\original128png\\28594.png",
-        label_path="~\\Documents\\data\\aml\\seg_mask128png\\28594.png",
-        out_path="~\\Documents\\data\\aml\\out"
+        model_path="../evaluation/diffusion_model/best_model.pt",
+        image_path="~/Documents/data/aml/original128png/28594.png",
+        out_path="~/Documents/data/aml/out"
     )

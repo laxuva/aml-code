@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from network.segmentation.unet import DownSamplingBlock
+from network.unet import DownSamplingBlock
 
 
 class Discriminator(torch.nn.Module):

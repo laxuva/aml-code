@@ -1,5 +1,5 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
 import numpy as np
 
@@ -29,10 +29,10 @@ class MetricsLogger:
             self.epoch_mean_per_metric[metric_name].append(np.mean(self.current_epoch_metrics[metric_name]))
             self.current_epoch_metrics[metric_name] = list()
 
-        print(f"[epoch {self.epoch}] " +
-              "; ".join(f"{metric_name}: {self.get_last(metric_name):.3}"
-                        for metric_name in self.metrics_to_track)
-              )
+        print(
+            f"[epoch {self.epoch}] " + "; ".join(f"{metric_name}: {self.get_last(metric_name):.3}"
+                                                 for metric_name in self.metrics_to_track)
+        )
 
         if self.save_each_epoch:
             self.save()

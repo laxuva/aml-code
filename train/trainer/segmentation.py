@@ -1,22 +1,22 @@
 from typing import Dict, Any
 
-import pytorch_lightning as pl
 import torch
 
-from network.segmentation.unet import UNet
-from train.loss.dice_loss import DiceLoss
-from train.utils.metrics_logger import MetricsLogger
 from metrics.segmentation.iou import iou
+from network.unet import UNet
+from train.loss.dice_loss import DiceLoss
+from train.trainer.trainer_base import TrainerBase
+from train.utils.metrics_logger import MetricsLogger
 
 
-class UNetTrainer(pl.LightningModule):
+class SegmentationTrainer(TrainerBase):
     def __init__(
             self,
             unet_config: Dict[str, Any],
             train_config: Dict[str, Any],
             device: torch.device = torch.device("cpu")
     ):
-        super(UNetTrainer, self).__init__()
+        super(SegmentationTrainer, self).__init__(device)
         self.model = UNet(**unet_config).to(device)
 
         self.loss_function = DiceLoss()
@@ -26,9 +26,6 @@ class UNetTrainer(pl.LightningModule):
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss", "train_iou", "val_iou")
         self.iou_th = train_config["iou_th"]
-
-    def configure_optimizers(self):
-        return [self.optimizer, self.lr_scheduler]
 
     def training_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
@@ -43,16 +40,6 @@ class UNetTrainer(pl.LightningModule):
 
         return loss
 
-    def train_on_batch(self, x, y) -> float:
-        self.optimizer.zero_grad()
-
-        loss = self.training_step(x, y)
-        loss.backward()
-
-        self.optimizer.step()
-
-        return loss.cpu().detach().item()
-
     def validation_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
@@ -65,10 +52,3 @@ class UNetTrainer(pl.LightningModule):
         )
 
         return loss
-
-    def end_epoch(self):
-        self.metrics_logger.end_epoch()
-        self.lr_scheduler.step()
-
-    def get_model(self):
-        return self.model

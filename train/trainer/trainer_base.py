@@ -1,26 +1,25 @@
-from typing import Dict, Any
+from typing import Optional
 
 import pytorch_lightning as pl
 import torch
 
-from network.segmentation.unet_with_embedding import UNet
 from train.utils.metrics_logger import MetricsLogger
 
 
-class GeneralTrainer(pl.LightningModule):
+class TrainerBase(pl.LightningModule):
     def __init__(
             self,
-            unet_config: Dict[str, Any],
-            train_config: Dict[str, Any],
             device: torch.device = torch.device("cpu")
     ):
-        super(GeneralTrainer, self).__init__()
-        self.model = UNet(**unet_config).to(device)
+        super(TrainerBase, self).__init__()
 
-        self.optimizer = torch.optim.Adam(lr=train_config["learning_rate"], params=self.model.parameters())
-        self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
+        self.model = None
+        self.optimizer = None
+        self.lr_scheduler = None
 
-        self.metrics_logger: MetricsLogger = None
+        self.used_device = device
+
+        self.metrics_logger: Optional[MetricsLogger] = None
 
     def configure_optimizers(self):
         return [self.optimizer, self.lr_scheduler]

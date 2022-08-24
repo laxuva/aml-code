@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 import tqdm
 
-from data.segmentation_dataset import SegmentationDataset
+from datasets import SegmentationDataset
 from metrics.segmentation import *
 from network.segmentation import UNet
 from utils.config_parser import ConfigParser
@@ -58,4 +58,4 @@ def test_main(config_path: str):
 
 
 if __name__ == '__main__':
-    test_main("../configs/debugging.yaml")
+    test_main("../../configs/segmentation.yaml")

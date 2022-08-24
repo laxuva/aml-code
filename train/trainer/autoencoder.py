@@ -1,20 +1,20 @@
 from typing import Dict, Any
 
-import pytorch_lightning as pl
 import torch
 
-from network.segmentation.unet import UNet
+from network.unet import UNet
+from train.trainer.trainer_base import TrainerBase
 from train.utils.metrics_logger import MetricsLogger
 
 
-class AutoencoderTrainer(pl.LightningModule):
+class AutoencoderTrainer(TrainerBase):
     def __init__(
             self,
             unet_config: Dict[str, Any],
             train_config: Dict[str, Any],
             device: torch.device = torch.device("cpu")
     ):
-        super(AutoencoderTrainer, self).__init__()
+        super(AutoencoderTrainer, self).__init__(device)
         self.model = UNet(**unet_config).to(device)
 
         self.loss_function = torch.nn.MSELoss()
@@ -30,9 +30,6 @@ class AutoencoderTrainer(pl.LightningModule):
         seg_map = torch.cat((seg_map, seg_map, seg_map), dim=1) != 0
         return self.loss_function(y_pred[seg_map], y[seg_map])
 
-    def configure_optimizers(self):
-        return [self.optimizer, self.lr_scheduler]
-
     def training_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
@@ -42,16 +39,6 @@ class AutoencoderTrainer(pl.LightningModule):
 
         return loss
 
-    def train_on_batch(self, x, y) -> float:
-        self.optimizer.zero_grad()
-
-        loss = self.training_step(x, y)
-        loss.backward()
-
-        self.optimizer.step()
-
-        return loss.cpu().detach().item()
-
     def validation_step(self, x, y) -> torch.Tensor:
         y_pred = self.model.forward(x)
 
@@ -60,10 +47,3 @@ class AutoencoderTrainer(pl.LightningModule):
         self.metrics_logger.log("val_loss", loss.cpu().detach().item())
 
         return loss
-
-    def end_epoch(self):
-        self.metrics_logger.end_epoch()
-        self.lr_scheduler.step()
-
-    def get_model(self):
-        return self.model

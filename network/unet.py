@@ -116,18 +116,3 @@ class UNet(torch.nn.Module):
             x = layer.forward(x, skip_input)
 
         return self.final_layer.forward(x)
-
-
-if __name__ == '__main__':
-    from pathlib import Path
-    from PIL import Image
-    from torchvision.transforms import ToTensor
-
-    img = Image.open(
-        Path("~\\Documents\\data\\aml\\masked128png\\00000_Mask.png").expanduser()
-    )
-
-    net = UNet(3, [16, 32, 64], 1)
-    print(net)
-    net.forward(ToTensor()(img)[None, :])
-

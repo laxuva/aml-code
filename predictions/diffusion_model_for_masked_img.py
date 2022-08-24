@@ -5,7 +5,7 @@ from PIL import Image
 from torchvision.transforms import ToTensor, ToPILImage
 from tqdm import tqdm
 
-from network.segmentation.unet_with_embedding import UNet
+from network.unet_with_embedding import UNet
 from utils.config_parser import ConfigParser
 
 
@@ -13,15 +13,10 @@ def do_multiple_diffusion_steps(img, alpha_head, device="cuda"):
     e = torch.randn_like(img).to(device)
     return torch.sqrt(alpha_head) * img + torch.sqrt(1 - alpha_head) * e
 
+
 @torch.no_grad()
-def test_prediction(
-        model_path="../train/best_model_12_epochs.pt",
-        image_path="D:/aml/localData/masked128png/00000_Mask.png",
-        label_path="D:/aml/localData/seg_mask128png/00000_Mask.png",
-        out_path="~\\Documents\\data\\aml\\out",
-        U=3
-):
-    config = ConfigParser.read("../configs/debugging_diffusion_model.yaml")
+def test_prediction(model_path, image_path, label_path, out_path, config_file="../configs/diffusion_model.yaml"):
+    config = ConfigParser.read(config_file)
 
     image_path = Path(image_path).expanduser()
     label_path = Path(label_path).expanduser()
@@ -36,6 +31,7 @@ def test_prediction(
     ).to(device)
 
     T = config["training"]["diffusion_steps"]
+    U = config["evaluation"]["harmonization_steps"]
 
     model = UNet(**config["model"]["params"])
     model.to(device)
@@ -54,6 +50,7 @@ def test_prediction(
     for t in tqdm(range(T)[::-1]):
         alpha_head = torch.prod(1 - diffusion_betas[:t+1]).to(device)
         alpha = 1 - diffusion_betas[t].to(device)
+
         for u in range(U):
             noise_to_reduce = model.forward(img_new, torch.tensor([t]).to(device))
             img_new = 1 / torch.sqrt(alpha) * (img_new - diffusion_betas[t] * noise_to_reduce / torch.sqrt(1 - alpha_head))
@@ -62,6 +59,7 @@ def test_prediction(
                 z = torch.randn_like(img_orig)
                 img_new += z * torch.sqrt((diffusion_betas[t] * (1 - alpha_head_t_minus_one) / (1 - alpha_head)))
                 img_new[seg_mask == 0] = do_multiple_diffusion_steps(img_orig, alpha_head, diffusion_betas)[seg_mask == 0].to(device)
+
                 if u < U:
                     img_new = torch.normal(torch.sqrt(1 - diffusion_betas[t]) * img_new, diffusion_betas[t]).to(device)
 
@@ -70,10 +68,11 @@ def test_prediction(
 
         alpha_head_t_minus_one = alpha_head
 
+
 if __name__ == '__main__':
     test_prediction(
-        model_path="../evaluation/dm/model_new.pt",
-        image_path="~\\Documents\\data\\aml\\original128png\\45852.png",
-        label_path="~\\Documents\\data\\aml\\seg_mask128png\\45852.png",
-        out_path="~\\Documents\\data\\aml\\out"
+        model_path="../evaluation/diffusion_model/model_new.pt",
+        image_path="~/Documents/data/aml/original128png/45852.png",
+        label_path="~/Documents/data/aml/seg_mask128png/45852.png",
+        out_path="~/Documents/data/aml/out"
     )

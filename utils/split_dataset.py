@@ -1,4 +1,4 @@
-from data.segmentation_dataset import SegmentationDataset
+from datasets.segmentation import SegmentationDataset
 
 
 def split_dataset(image_path, label_path):
