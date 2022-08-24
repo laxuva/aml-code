@@ -22,7 +22,7 @@ class AutoencoderTrainer(TrainerBase):
         self.optimizer = torch.optim.Adam(lr=train_config["learning_rate"], params=self.model.parameters())
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
 
-        self.metrics_logger = MetricsLogger("train_loss", "val_loss")
+        self.metrics_logger = MetricsLogger("train_loss", "val_loss", out_path=train_config["out_path"])
 
     def compute_loss(self, y_pred, y, x):
         batch_size, _, w, h = x.shape

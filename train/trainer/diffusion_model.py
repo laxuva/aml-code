@@ -49,7 +49,7 @@ class DiffusionModelTrainer(TrainerBase):
         if self.sampled_images_location is not None and not self.sampled_images_location.exists():
             self.sampled_images_location.mkdir()
 
-        self.metrics_logger = MetricsLogger("train_loss", "val_loss")
+        self.metrics_logger = MetricsLogger("train_loss", "val_loss", out_path=train_config["out_path"])
         self.epoch = 0
 
     def backward_diffusion_process(self, img, train: bool = True):

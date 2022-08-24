@@ -24,7 +24,9 @@ class SegmentationTrainer(TrainerBase):
         self.optimizer = torch.optim.Adam(lr=train_config["learning_rate"], params=self.model.parameters())
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
 
-        self.metrics_logger = MetricsLogger("train_loss", "val_loss", "train_iou", "val_iou")
+        self.metrics_logger = MetricsLogger(
+            "train_loss", "val_loss", "train_iou", "val_iou", out_path=train_config["out_path"]
+        )
         self.iou_th = train_config["iou_th"]
 
     def training_step(self, x, y) -> torch.Tensor:
