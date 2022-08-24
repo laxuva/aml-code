@@ -7,6 +7,7 @@ import torch
 
 from data.segmentation_dataset import SegmentationDataset
 from data.autoencoder_dataset import AutoencoderDataset
+from data.diffusion_model_dataset import DiffusionModelDataset
 from train.segmentation.unet_trainer import UNetTrainer
 from train.autoencoder.autoencoder_trainer import AutoencoderTrainer
 from train.autoencoder.adversarial_trainer import AdversarialAutoencoderTrainer
@@ -25,6 +26,8 @@ def train(config: Dict[str, Any]):
         dataset_class = SegmentationDataset
     elif config["dataset"]["type"] == "AutoencoderDataset":
         dataset_class = AutoencoderDataset
+    elif config["dataset"]["type"] == "DiffusionModelDataset":
+        dataset_class = DiffusionModelDataset
     else:
         raise NotImplementedError(f"The dataset class {config['dataset']['type']} is not available")
 
