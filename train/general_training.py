@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 from typing import Dict, Any
 
@@ -15,8 +16,9 @@ def train(config: Dict[str, Any]):
     train_config = config["training"]
     out_path = Path(train_config["out_path"]).expanduser()
 
-    if not out_path.exists():
-        out_path.mkdir()
+    if out_path.exists():
+        shutil.rmtree(out_path, ignore_errors=True)
+    out_path.mkdir()
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
