@@ -41,10 +41,13 @@ class DiffusionModelTrainer(TrainerBase):
 
         self.show_sampled_images = train_config["show_sampled_images"]
         self.sampled_images_location = (
-            Path(train_config["sampled_images_location"])
+            Path(train_config["sampled_images_location"]).expanduser()
             if "sampled_images_location" in train_config
             else None
         )
+
+        if self.sampled_images_location is not None and not self.sampled_images_location.exists():
+            self.sampled_images_location.mkdir()
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss")
         self.epoch = 0
