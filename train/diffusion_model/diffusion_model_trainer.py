@@ -23,8 +23,8 @@ class DiffusionModelTrainer(GeneralTrainer):
         ).to(device)
 
         # self.loss_function = torch.nn.MSELoss()
-        # self.loss_function = torch.nn.L1Loss()
-        self.loss_function = torch.nn.SmoothL1Loss()
+        self.loss_function = torch.nn.L1Loss()
+        # self.loss_function = torch.nn.SmoothL1Loss()
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss")
 
