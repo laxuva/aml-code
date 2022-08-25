@@ -11,6 +11,7 @@ train/train_info.json
 /train/training_results/
 /hyperparam_opt/training_results/
 /hyperparam_opt/results/
+/results/
 
 # trained models used in evaluation
 /evaluation/autoencoder/best_model.pt

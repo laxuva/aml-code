@@ -9,13 +9,18 @@ from hyperparam_opt.wrapper.diffusion_model import DiffusionModelWrapper
 from hyperparam_opt.utils.convert_to_std_types import convert_to_std_type
 
 
-def optimize(out_path: str = "."):
+def optimize(base_config_file, out_path: str = "."):
     out_path = Path(out_path).expanduser()
 
     if not out_path.exists():
         out_path.mkdir()
 
-    model = DiffusionModelWrapper(no_early_stopping=True, save_intermediate_results=True, out_path=out_path)
+    model = DiffusionModelWrapper(
+        base_config_file,
+        no_early_stopping=True,
+        save_intermediate_results=True,
+        out_path=out_path
+    )
 
     search_space = {
         "learning_rate": Real(0.00001, 0.1, prior="log-uniform"),
@@ -29,7 +34,7 @@ def optimize(out_path: str = "."):
         ])
     }
 
-    results = gp_minimize(model.fit_with_params, search_space.values(), n_calls=10)
+    results = gp_minimize(model.fit_with_params, search_space.values(), n_calls=50)
     print("Best hyperparameters:", results.x)
     print("Best loss:", results.fun)
 

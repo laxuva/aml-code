@@ -12,15 +12,16 @@ from hyperparam_opt.utils.convert_to_std_types import convert_to_std_type
 class DiffusionModelWrapper:
     def __init__(
             self,
+            base_config_file,
             learning_rate: int = 0.001,
             lr_scheduler_step_size: int = 25,
             lr_scheduler_gamma: float = 0.5,
             channels_per_depth: List[int] = json.dumps([64, 128, 256, 512, 1024]),
             no_early_stopping: bool = False,
             save_intermediate_results: bool = False,
-            out_path: Path = Path(".")
+            out_path: Path = Path("."),
     ):
-        self.base_config_file = str(Path(__file__).parent.parent.parent.joinpath("configs").joinpath("diffusion_model.yaml"))
+        self.base_config_file = base_config_file
         self.config = dict()
 
         self.best_state_dict = None
