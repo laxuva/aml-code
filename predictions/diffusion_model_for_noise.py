@@ -16,6 +16,9 @@ def test_prediction(model_path, image_path, out_path, config_file="../configs/di
     image_path = Path(image_path).expanduser()
     out_path = Path(out_path).expanduser()
 
+    if not out_path.exists():
+        out_path.mkdir()
+
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     diffusion_betas = torch.linspace(
@@ -39,7 +42,7 @@ def test_prediction(model_path, image_path, out_path, config_file="../configs/di
     alpha_head_t_minus_one = 0
 
     for t in tqdm(range(T-1, -1, -1)):
-        alpha_head = torch.prod(1 - diffusion_betas[:t]).to(device)
+        alpha_head = torch.prod(1 - diffusion_betas[:t+1]).to(device)
         alpha = torch.sqrt(1 - diffusion_betas[t]).to(device)
 
         noise_to_reduce = model.forward(img, torch.tensor([t]).to(device))
@@ -54,6 +57,8 @@ def test_prediction(model_path, image_path, out_path, config_file="../configs/di
         #     new_value = new_value + z * torch.sqrt(diffusion_betas[t+1])
 
         img = new_value
+
+        new_value = torch.clip(new_value, -1, 1) / 2 + 0.5
 
         ToPILImage()(noise_to_reduce[0]).save(out_path.joinpath(f"predicted_noise{t}.png"))
         ToPILImage()(new_value[0]).save(out_path.joinpath(f"predicted_new_value{t}.png"))

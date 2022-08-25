@@ -1,7 +1,7 @@
 dataset.params.image_path: "~/Documents/data/aml/original128png"
 dataset.params.preload_percentage: 1
-dataset.train_label: "~/Documents/data/aml/train_dataset_small.json"
-dataset.val_label: "~/Documents/data/aml/val_dataset_small.json"
+dataset.train_label: "~/Documents/data/aml/train_dataset_medium_dm.json"
+dataset.val_label: "~/Documents/data/aml/val_dataset_medium_dm.json"
 dataset.test_label: "~/Documents/data/aml/test_dataset.json"
 dataset.type: DiffusionModelDataset
 
@@ -15,8 +15,8 @@ val_loader.num_workers: 0
 
 training.max_epochs: 500
 training.learning_rate: 0.001
-training.break_criterion: 15
-training.lr_scheduler.step_size: 25
+training.break_criterion: 500
+training.lr_scheduler.step_size: 500
 training.lr_scheduler.gamma: 0.5
 training.out_path: "./training_results"
 training.diffusion_beta_1: 0.0001

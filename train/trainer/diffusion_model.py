@@ -68,7 +68,7 @@ class DiffusionModelTrainer(TrainerBase):
 
         input_for_model = torch.zeros_like(img)
         for idx, t_b in enumerate(t):
-            alpha = torch.prod(1 - self.diffusion_betas[:t_b])
+            alpha = torch.prod(1 - self.diffusion_betas[:t_b+1])
             input_for_model[idx] = torch.sqrt(alpha) * img[idx] + torch.sqrt(1 - alpha) * e[idx]
 
         e_pred = self.model.forward(input_for_model, t)
@@ -120,7 +120,7 @@ class DiffusionModelTrainer(TrainerBase):
         alpha_head_t_minus_one = 0
 
         for t in range(0, len(self.diffusion_betas))[::-1]:
-            alpha_head = torch.prod(1 - self.diffusion_betas[:t + 1]).to(self.used_device)
+            alpha_head = torch.prod(1 - self.diffusion_betas[:t+1]).to(self.used_device)
             alpha = 1 - self.diffusion_betas[t].to(self.used_device)
             noise_to_reduce = self.model.forward(img, torch.tensor([t]).to(self.used_device))
             img = 1 / torch.sqrt(alpha) * (
