@@ -2,6 +2,8 @@ import json
 from typing import List
 from pathlib import Path
 
+import torch
+
 from train.general_training import train
 from utils.config_parser import ConfigParser
 from hyperparam_opt.utils.convert_to_std_types import convert_to_std_type
@@ -65,6 +67,8 @@ class DiffusionModelWrapper:
         if self.last_val_loss <= self.best_val_loss:
             self.best_val_loss = self.last_val_loss
             self.best_state_dict = state_dict
+
+            torch.save(state_dict, self.out_path.joinpath("best_model_weights.pt"))
 
         if self.save_intermediate_results:
             with open(self.out_path.joinpath("intermediate_results.json"), "r+") as f:
