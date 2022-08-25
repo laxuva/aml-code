@@ -22,6 +22,9 @@ def test_prediction(model_path, image_path, label_path, out_path, config_file=".
     label_path = Path(label_path).expanduser()
     out_path = Path(out_path).expanduser()
 
+    if not out_path.exists():
+        out_path.mkdir()
+
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     diffusion_betas = torch.linspace(
@@ -64,15 +67,15 @@ def test_prediction(model_path, image_path, label_path, out_path, config_file=".
                     img_new = torch.normal(torch.sqrt(1 - diffusion_betas[t]) * img_new, diffusion_betas[t]).to(device)
 
         img_new[seg_mask == 0] = img_orig[seg_mask == 0]
+        # ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value{t}.png"))
         ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value{t}.png"))
-
         alpha_head_t_minus_one = alpha_head
 
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../evaluation/diffusion_model/model_new.pt",
-        image_path="~/Documents/data/aml/original128png/45852.png",
-        label_path="~/Documents/data/aml/seg_mask128png/45852.png",
+        model_path="../evaluation/diffusion_model/best_model.pt",
+        image_path="~/Documents/data/aml/original128png/00018.png",
+        label_path="~/Documents/data/aml/seg_mask128png/00018.png",
         out_path="~/Documents/data/aml/out"
     )
