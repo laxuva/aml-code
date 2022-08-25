@@ -8,7 +8,7 @@ from hyperparam_opt.wrapper.diffusion_model import DiffusionModelWrapper
 
 
 def optimize():
-    model = DiffusionModelWrapper()
+    model = DiffusionModelWrapper(no_early_stopping=True)
 
     search_space = {
         "learning_rate": Real(0.00001, 0.1, prior="log-uniform"),
