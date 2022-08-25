@@ -1,28 +1,28 @@
 dataset.params.image_path: "~/Documents/data/aml/original128png"
 dataset.params.preload_percentage: 1
-dataset.train_label: "~/Documents/data/aml/train_dataset_medium_dm.json"
-dataset.val_label: "~/Documents/data/aml/val_dataset_medium_dm.json"
+dataset.train_label: "~/Documents/data/aml/train_dataset_large.json"
+dataset.val_label: "~/Documents/data/aml/val_dataset_large.json"
 dataset.test_label: "~/Documents/data/aml/test_dataset.json"
 dataset.type: DiffusionModelDataset
 
-train_loader.batch_size: 32
+train_loader.batch_size: 80
 train_loader.shuffle: True
 train_loader.num_workers: 0
 
-val_loader.batch_size: 64
+val_loader.batch_size: 96
 val_loader.shuffle: False
 val_loader.num_workers: 0
 
-training.max_epochs: 500
+training.max_epochs: 50
 training.learning_rate: 0.001
-training.break_criterion: 500
-training.lr_scheduler.step_size: 500
+training.break_criterion: 50
+training.lr_scheduler.step_size: 25
 training.lr_scheduler.gamma: 0.5
 training.out_path: "./training_results"
 training.diffusion_beta_1: 0.0001
 training.diffusion_beta_capital_t: 0.02
 training.diffusion_steps: 300
-training.show_sampled_images: True
+training.show_sampled_images: False
 training.sampled_images_location: "./training_results/sampled_images"
 training.loss_function: L1Loss  # possible values: L1Loss, MSELoss, SmoothL1Loss
 
