@@ -99,9 +99,7 @@ def train(config: Dict[str, Any]):
 
     torch.save(model.get_model().state_dict(), out_path.joinpath("final_model.pt"))
 
-    best_model = model.get_model()
-    best_model.load_state_dict(best_state_dict)
-    return best_model, best_val_loss
+    return best_state_dict, best_val_loss
 
 
 if __name__ == '__main__':
