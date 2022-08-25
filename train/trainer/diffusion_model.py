@@ -103,7 +103,9 @@ class DiffusionModelTrainer(TrainerBase):
         super(DiffusionModelTrainer, self).end_epoch()
 
         self.epoch += 1
-        self.sample_plot_image()
+
+        if self.show_sampled_images or self.sampled_images_location is not None:
+            self.sample_plot_image()
 
     @torch.no_grad()
     def sample_plot_image(self):

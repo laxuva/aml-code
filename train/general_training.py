@@ -69,6 +69,7 @@ def train(config: Dict[str, Any]):
 
     best_val_loss = np.inf
     epochs_without_improvement = 0
+    best_state_dict = dict()
 
     for epoch in range(train_config["max_epochs"]):
         train_loss = list()
@@ -85,10 +86,11 @@ def train(config: Dict[str, Any]):
 
         model.end_epoch()  # does a lr scheduler step and a metrics logger step
 
-        if model.metrics_logger.get_last("val_loss") < best_val_loss:
+        if model.metrics_logger.get_last("val_loss") <= best_val_loss:
             best_val_loss = model.metrics_logger.get_last("val_loss")
             epochs_without_improvement = 0
             torch.save(model.get_model().state_dict(), out_path.joinpath("best_model.pt"))
+            best_state_dict = model.get_model().state_dict().copy()
         else:
             epochs_without_improvement += 1
 
@@ -96,6 +98,10 @@ def train(config: Dict[str, Any]):
                 break
 
     torch.save(model.get_model().state_dict(), out_path.joinpath("final_model.pt"))
+
+    best_model = model.get_model()
+    best_model.load_state_dict(best_state_dict)
+    return best_model, best_val_loss
 
 
 if __name__ == '__main__':
