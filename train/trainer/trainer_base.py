@@ -9,7 +9,8 @@ from train.utils.metrics_logger import MetricsLogger
 class TrainerBase(pl.LightningModule):
     def __init__(
             self,
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            save_output: bool = True
     ):
         super(TrainerBase, self).__init__()
 
@@ -18,6 +19,7 @@ class TrainerBase(pl.LightningModule):
         self.lr_scheduler = None
 
         self.used_device = device
+        self.save_output = save_output
 
         self.metrics_logger: Optional[MetricsLogger] = None
 
@@ -35,7 +37,7 @@ class TrainerBase(pl.LightningModule):
         return loss.cpu().detach().item()
 
     def end_epoch(self):
-        self.metrics_logger.end_epoch()
+        self.metrics_logger.end_epoch(save_output=self.save_output)
         self.lr_scheduler.step()
 
     def get_model(self):

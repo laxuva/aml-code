@@ -60,7 +60,7 @@ class DiffusionModelWrapper:
         return self.last_val_loss
 
     def fit(self):
-        state_dict, self.last_val_loss = train(self.config)
+        state_dict, self.last_val_loss = train(self.config, save_output=False)
 
         if self.last_val_loss <= self.best_val_loss:
             self.best_val_loss = self.last_val_loss

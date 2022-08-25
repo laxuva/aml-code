@@ -12,9 +12,10 @@ class AutoencoderTrainer(TrainerBase):
             self,
             unet_config: Dict[str, Any],
             train_config: Dict[str, Any],
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            save_output: bool = True
     ):
-        super(AutoencoderTrainer, self).__init__(device)
+        super(AutoencoderTrainer, self).__init__(device, save_output=save_output)
         self.model = UNet(**unet_config).to(device)
 
         self.loss_function = torch.nn.MSELoss()

@@ -15,9 +15,10 @@ class DiffusionModelTrainer(TrainerBase):
             self,
             unet_config: Dict[str, Any],
             train_config: Dict[str, Any],
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            save_output: bool = True
     ):
-        super(DiffusionModelTrainer, self).__init__(device)
+        super(DiffusionModelTrainer, self).__init__(device, save_output=save_output)
 
         self.model = UNet(**unet_config).to(device)
 
@@ -46,7 +47,7 @@ class DiffusionModelTrainer(TrainerBase):
             else None
         )
 
-        if self.sampled_images_location is not None and not self.sampled_images_location.exists():
+        if self.save_output and self.sampled_images_location is not None and not self.sampled_images_location.exists():
             self.sampled_images_location.mkdir()
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss", out_path=train_config["out_path"])
@@ -104,7 +105,7 @@ class DiffusionModelTrainer(TrainerBase):
 
         self.epoch += 1
 
-        if self.show_sampled_images or self.sampled_images_location is not None:
+        if self.save_output and (self.show_sampled_images or self.sampled_images_location is not None):
             self.sample_plot_image()
 
     @torch.no_grad()

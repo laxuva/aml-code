@@ -14,9 +14,10 @@ class SegmentationTrainer(TrainerBase):
             self,
             unet_config: Dict[str, Any],
             train_config: Dict[str, Any],
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            save_output: bool = True
     ):
-        super(SegmentationTrainer, self).__init__(device)
+        super(SegmentationTrainer, self).__init__(device, save_output=save_output)
         self.model = UNet(**unet_config).to(device)
 
         self.loss_function = DiceLoss()

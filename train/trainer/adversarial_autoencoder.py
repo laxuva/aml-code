@@ -17,8 +17,9 @@ class AdversarialAutoencoderTrainer(TrainerBase):
             train_dataset,
             val_dataset,
             device: torch.device = torch.device("cpu"),
+            save_output: bool = True
     ):
-        super(AdversarialAutoencoderTrainer, self).__init__(device)
+        super(AdversarialAutoencoderTrainer, self).__init__(device, save_output=save_output)
         self.model = UNet(**unet_config).to(device)
         self.discriminator = Discriminator(3).to(device)
 

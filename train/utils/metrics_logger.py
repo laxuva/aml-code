@@ -5,7 +5,7 @@ import numpy as np
 
 
 class MetricsLogger:
-    def __init__(self, *metrics_to_track: str, out_path: str = ".", save_each_epoch: bool = True):
+    def __init__(self, *metrics_to_track: str, out_path: str = "."):
         self.metrics_to_track = metrics_to_track
 
         self.current_epoch_metrics = dict()
@@ -17,12 +17,11 @@ class MetricsLogger:
 
         self.epoch = 0
         self.out_path = Path(out_path)
-        self.save_each_epoch = save_each_epoch
 
     def log(self, key: str, value):
         self.current_epoch_metrics[key].append(value)
 
-    def end_epoch(self):
+    def end_epoch(self, save_output: bool = True):
         self.epoch += 1
 
         for metric_name in self.metrics_to_track:
@@ -34,7 +33,7 @@ class MetricsLogger:
                                                  for metric_name in self.metrics_to_track)
         )
 
-        if self.save_each_epoch:
+        if save_output:
             self.save()
 
     def get_last(self, metric_name: str) -> float:
