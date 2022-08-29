@@ -37,7 +37,7 @@ class BaseWrapper(ABC):
         self.n_calls = n_calls
 
     @abstractmethod
-    def set_params(self, learning_rate, lr_scheduler_step_size, lr_scheduler_gamma, channels_per_depth):
+    def set_params(self, *args):
         pass
 
     @abstractmethod
