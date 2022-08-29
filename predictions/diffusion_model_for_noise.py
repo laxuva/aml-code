@@ -37,13 +37,13 @@ def test_prediction(model_path, image_path, out_path, config_file="../configs/di
     x = ToTensor()(Image.open(image_path)).to(device)[None, :]
 
     img_shape = list(x.shape)
-    img = torch.randn(img_shape).to(device)
+    img = torch.randn(img_shape, device=device)
 
     alpha_head_t_minus_one = 0
 
-    for t in tqdm(range(T-1, -1, -1)):
+    for t in tqdm(range(0, len(diffusion_betas))[::-1]):
         alpha_head = torch.prod(1 - diffusion_betas[:t+1]).to(device)
-        alpha = torch.sqrt(1 - diffusion_betas[t]).to(device)
+        alpha = 1 - diffusion_betas[t].to(device)
 
         noise_to_reduce = model.forward(img, torch.tensor([t]).to(device))
         new_value = 1 / torch.sqrt(alpha) * (img - (1 - alpha) / torch.sqrt(1 - alpha_head) * noise_to_reduce)
