@@ -22,6 +22,9 @@ class DiffusionModelTrainer(TrainerBase):
 
         self.model = UNet(**unet_config).to(device)
 
+        if "pretrained_model_path" in train_config:
+            self.model.load_state_dict(torch.load(train_config["pretrained_model_path"], map_location=device))
+
         self.optimizer = torch.optim.Adam(lr=train_config["learning_rate"], params=self.model.parameters())
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, **train_config["lr_scheduler"])
 
