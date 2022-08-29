@@ -1,6 +1,6 @@
 import argparse
 
-from hyperparam_opt.optimize_dm_training import optimize
+from hyperparam_opt.optimize_training import optimize
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
