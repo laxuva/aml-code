@@ -66,7 +66,7 @@ def test_prediction(model_path, image_path, label_path, out_path, config_file=".
                 if u < U:
                     img_new = torch.normal(torch.sqrt(1 - diffusion_betas[t]) * img_new, diffusion_betas[t]).to(device)
 
-        ToPILImage()((img_new[0] - img_new[0].min()) / img_new.max()).save(out_path.joinpath(f"just_new_value{t}.png"))
+        ToPILImage()(torch.clip(((img_new[seg_mask != 0] - img_new[seg_mask != 0].min()) / img_new[seg_mask != 0].max()), 0, 1)).save(out_path.joinpath(f"just_new_value{t}.png"))
         img_new[seg_mask == 0] = img_orig[seg_mask == 0]
         # ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value{t}.png"))
         ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value{t}.png"))
