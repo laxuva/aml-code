@@ -5,8 +5,9 @@ import torch
 from skopt import gp_minimize
 from skopt.space import Real, Categorical, Integer
 
-from hyperparam_opt.wrapper.diffusion_model import DiffusionModelWrapper
 from hyperparam_opt.utils.convert_to_std_types import convert_to_std_type
+from hyperparam_opt.wrapper import AutoencoderWrapper, DiffusionModelWrapper
+from utils.config_parser import ConfigParser
 
 
 def optimize(base_config_file, out_path: str = "."):
@@ -15,7 +16,12 @@ def optimize(base_config_file, out_path: str = "."):
     if not out_path.exists():
         out_path.mkdir()
 
-    model = DiffusionModelWrapper(
+    wrapper_class = {
+        "AutoencoderTrainer": AutoencoderWrapper,
+        "DiffusionModelTrainer": DiffusionModelWrapper
+    }[ConfigParser.read(base_config_file)["model"]["type"]]
+
+    model = wrapper_class(
         base_config_file,
         no_early_stopping=True,
         save_intermediate_results=True,
@@ -50,4 +56,4 @@ def optimize(base_config_file, out_path: str = "."):
 
 
 if __name__ == '__main__':
-    optimize("results")
+    optimize("../configs/autoencoder.yaml", "results")

@@ -6,7 +6,7 @@ from hyperparam_opt.wrapper.base_wrapper import BaseWrapper
 from utils.config_parser import ConfigParser
 
 
-class DiffusionModelWrapper(BaseWrapper):
+class AutoencoderWrapper(BaseWrapper):
     def __init__(
             self,
             base_config_file,
@@ -19,7 +19,7 @@ class DiffusionModelWrapper(BaseWrapper):
             out_path: Path = Path("."),
             n_calls: int = 50
     ):
-        super(DiffusionModelWrapper, self).__init__(
+        super(AutoencoderWrapper, self).__init__(
             base_config_file, no_early_stopping, save_intermediate_results, out_path, n_calls
         )
 
