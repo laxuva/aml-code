@@ -29,6 +29,7 @@ def optimize(base_config_file, out_path: str = "."):
     )
 
     search_space = {
+        "batch_size": Categorical([16, 32, 64]),
         "learning_rate": Real(0.00001, 0.1, prior="log-uniform"),
         "lr_scheduler_step_size": Integer(10, 50),
         "lr_scheduler_gamma": Real(0.1, 0.75, prior="uniform"),

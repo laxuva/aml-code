@@ -10,6 +10,7 @@ class DiffusionModelWrapper(BaseWrapper):
     def __init__(
             self,
             base_config_file,
+            batch_size: int = 32,
             learning_rate: int = 0.001,
             lr_scheduler_step_size: int = 25,
             lr_scheduler_gamma: float = 0.5,
@@ -23,10 +24,12 @@ class DiffusionModelWrapper(BaseWrapper):
             base_config_file, no_early_stopping, save_intermediate_results, out_path, n_calls
         )
 
-        self.set_params(learning_rate, lr_scheduler_step_size, lr_scheduler_gamma, channels_per_depth)
+        self.set_params(batch_size, learning_rate, lr_scheduler_step_size, lr_scheduler_gamma, channels_per_depth)
 
-    def set_params(self, learning_rate, lr_scheduler_step_size, lr_scheduler_gamma, channels_per_depth):
+    def set_params(self, batch_size, learning_rate, lr_scheduler_step_size, lr_scheduler_gamma, channels_per_depth):
         self.config = ConfigParser.read(self.base_config_file)
+        self.config["train_loader"]["batch_size"] = int(batch_size)
+        self.config["val_loader"]["batch_size"] = int(batch_size)
         self.config["training"]["learning_rate"] = learning_rate
         self.config["training"]["lr_scheduler"]["step_size"] = lr_scheduler_step_size
         self.config["training"]["lr_scheduler"]["gamma"] = lr_scheduler_gamma
@@ -37,6 +40,7 @@ class DiffusionModelWrapper(BaseWrapper):
 
     def get_params(self):
         return {
+            "batch_size":  self.config["train_loader"]["batch_size"],
             "learning_rate": self.config["training"]["learning_rate"],
             "lr_scheduler_step_size": self.config["training"]["lr_scheduler"]["step_size"],
             "lr_scheduler_gamma": self.config["training"]["lr_scheduler"]["gamma"],
