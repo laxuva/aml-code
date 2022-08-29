@@ -10,7 +10,7 @@ from utils.config_parser import ConfigParser
 
 
 def do_multiple_diffusion_steps(img, alpha_head, device="cuda"):
-    e = torch.randn_like(img).to(device)
+    e = torch.normal(0, 1, img.shape).to(device)
     return torch.sqrt(alpha_head) * img + torch.sqrt(1 - alpha_head) * e
 
 
