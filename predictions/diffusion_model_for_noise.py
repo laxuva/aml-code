@@ -32,7 +32,7 @@ def test_prediction(model_path, image_path, out_path, config_file="../configs/di
     model = UNet(**config["model"]["params"])
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
-    # model.eval()
+    model.eval()
 
     x = ToTensor()(Image.open(image_path)).to(device)[None, :]
 
