@@ -34,9 +34,9 @@ def optimize(base_config_file, out_path: str = "."):
         "lr_scheduler_step_size": Integer(10, 50),
         "lr_scheduler_gamma": Real(0.1, 0.75, prior="uniform"),
         "channels_per_depth": Categorical([
-            json.dumps([64, 128, 256, 512, 1024]),
+            json.dumps([16, 32, 64, 128]),
+            json.dumps([16, 32, 64, 128, 256]),
             json.dumps([32, 64, 128, 256, 512]),
-            json.dumps([64, 128, 256, 512]),
             json.dumps([32, 64, 128, 256]),
         ])
     }
