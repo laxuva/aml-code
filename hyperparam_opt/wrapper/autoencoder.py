@@ -10,7 +10,7 @@ class AutoencoderWrapper(BaseWrapper):
     def __init__(
             self,
             base_config_file,
-            batch_size: 32,
+            batch_size: int = 32,
             learning_rate: int = 0.001,
             lr_scheduler_step_size: int = 25,
             lr_scheduler_gamma: float = 0.5,
