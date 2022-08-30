@@ -39,7 +39,7 @@ def test_prediction(model_path, image_path, label_path, out_path, config_file=".
     model = UNet(**config["model"]["params"])
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
-    # model.eval()
+    model.eval()
 
     img_orig = ToTensor()(Image.open(image_path)).to(device)[None, :] * 2 - 1
     seg_mask = ToTensor()(Image.open(label_path)).to(device)[None, :]
@@ -73,8 +73,8 @@ def test_prediction(model_path, image_path, label_path, out_path, config_file=".
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../evaluation/diffusion_model/best_model_weights.pt",
-        image_path="~/Documents/data/aml/original128png/00018.png",
-        label_path="~/Documents/data/aml/seg_mask128png/00018.png",
+        model_path="C:/Users/Christoph/Documents/data/aml/models/best_model.pt",
+        image_path="~/Documents/data/aml/original128png/00375.png", #00186 00048 00018 45844
+        label_path="~/Documents/data/aml/seg_mask128png/00375.png",
         out_path="~/Documents/data/aml/out"
     )
