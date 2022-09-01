@@ -8,6 +8,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
 
+from augmentations import Identity
+
 
 class AutoencoderDataset(Dataset):
     to_tensor: Callable = ToTensor()
@@ -20,7 +22,8 @@ class AutoencoderDataset(Dataset):
             seg_map_images: List[str],
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu"),
-            add_seg_map_channel_to_x: bool = True
+            add_seg_map_channel_to_x: bool = True,
+            augmentations: Callable = Identity()
     ):
         self.original_image_path = original_image_path
         self.seg_map_image_path = seg_map_image_path
@@ -33,6 +36,8 @@ class AutoencoderDataset(Dataset):
 
         self.loaded_original_images = None
         self.loaded_facemask_images = None
+
+        self.augmentations = augmentations
 
         self.load_data(preload_percentage)
 
@@ -56,7 +61,6 @@ class AutoencoderDataset(Dataset):
             if self.add_seg_map_channel_to_x:
                 self.loaded_facemask_images[idx] = torch.cat((self.loaded_facemask_images[idx], seg_map))
 
-
     def _load_image(self, image_path):
         return AutoencoderDataset.to_tensor(Image.open(image_path)).to(self.device)
 
@@ -66,7 +70,8 @@ class AutoencoderDataset(Dataset):
             original_image_path: Path,
             seg_map_image_path: Path,
             preload_percentage: float = 1,
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            augmentations: Callable = Identity()
     ) -> "AutoencoderDataset":
         file = Path(label_file).expanduser()
 
@@ -79,7 +84,8 @@ class AutoencoderDataset(Dataset):
             label_file["images"],
             label_file["images"],
             preload_percentage,
-            device
+            device,
+            augmentations=augmentations
         )
 
     @staticmethod
@@ -87,7 +93,8 @@ class AutoencoderDataset(Dataset):
             original_image_path: str,
             seg_map_image_path: str,
             preload_percentage: float = 1,
-            device: torch.device = torch.device("cpu")
+            device: torch.device = torch.device("cpu"),
+            augmentations: Callable = Identity()
     ) -> "AutoencoderDataset":
         original_image_path = Path(original_image_path).expanduser()
         seg_map_image_path = Path(seg_map_image_path).expanduser()
@@ -100,7 +107,8 @@ class AutoencoderDataset(Dataset):
             original_images,
             seg_map_images,
             preload_percentage,
-            device
+            device,
+            augmentations=augmentations
         )
 
     @staticmethod
@@ -129,7 +137,10 @@ class AutoencoderDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.loaded_original_images[idx] is not None:
-            return self.loaded_facemask_images[idx], self.loaded_original_images[idx]
+            return (
+                self.augmentations(self.loaded_facemask_images[idx]),
+                self.augmentations(self.loaded_original_images[idx])
+            )
 
         img = self._load_image(self.original_image_path.joinpath(self.original_images[idx]))
         seg_map = self._load_image(self.seg_map_image_path.joinpath(self.seg_map_images[idx]))
@@ -141,8 +152,8 @@ class AutoencoderDataset(Dataset):
             face_mask_img = torch.cat((face_mask_img, seg_map))
 
         return (
-            face_mask_img,
-            img
+            self.augmentations(face_mask_img),
+            self.augmentations(img)
         )
 
     def save(self, file: str):
@@ -185,14 +196,3 @@ class AutoencoderDataset(Dataset):
                 self.device
             )
         )
-
-
-if __name__ == '__main__':
-    dataset_train, dataset_val, dataset_test = AutoencoderDataset.load_train_val_and_test_data(
-        "~\\Documents\\data\\aml\\masked128png",
-        "~\\Documents\\data\\aml\\seg_mask128png",
-        preload_percentage=0
-    )
-
-    img, label = dataset_train[0]
-    print(img.size(), label.size())

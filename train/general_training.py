@@ -10,6 +10,7 @@ from tqdm import tqdm
 from datasets import SegmentationDataset, AutoencoderDataset, DiffusionModelDataset
 from train.trainer import AdversarialAutoencoderTrainer, AutoencoderTrainer, DiffusionModelTrainer, SegmentationTrainer
 from utils.config_parser import ConfigParser
+from augmentations import FlipLeftRight
 
 
 def train(config: Dict[str, Any], save_output: bool = True):
@@ -31,6 +32,9 @@ def train(config: Dict[str, Any], save_output: bool = True):
         }[config["dataset"]["type"]]
     except KeyError:
         raise NotImplementedError(f"The dataset class {config['dataset']['type']} is not available")
+
+    if "do_augmentations" in config["training"] and config["training"]["do_augmentations"]:
+        config["dataset"]["params"]["augmentations"] = FlipLeftRight(p=0.5)
 
     dataset_train = dataset_class.load_from_label_file(
         config["dataset"]["train_label"],

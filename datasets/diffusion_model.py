@@ -8,6 +8,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
 
+from augmentations import Identity
+
 
 class DiffusionModelDataset(Dataset):
     to_tensor: Callable = ToTensor()
@@ -18,7 +20,8 @@ class DiffusionModelDataset(Dataset):
             images: List[str],
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu"),
-            transforms: List[Callable] = []
+            transforms: List[Callable] = [],
+            augmentations: Callable = Identity()
     ):
         self.image_path = image_path
         self.images = images
@@ -27,6 +30,8 @@ class DiffusionModelDataset(Dataset):
         self.transforms = transforms
 
         self.loaded_images = None
+
+        self.augmentations = augmentations
 
         self.load_data(preload_percentage)
 
@@ -50,7 +55,8 @@ class DiffusionModelDataset(Dataset):
             image_path: str,
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu"),
-            transforms: List[Callable] = []
+            transforms: List[Callable] = [],
+            augmentations: Callable = Identity()
     ) -> "DiffusionModelDataset":
         file = Path(label_file).expanduser()
 
@@ -62,7 +68,8 @@ class DiffusionModelDataset(Dataset):
             label_file["images"],
             preload_percentage,
             device,
-            transforms
+            transforms,
+            augmentations=augmentations
         )
 
     @staticmethod
@@ -70,7 +77,8 @@ class DiffusionModelDataset(Dataset):
             image_path: str,
             preload_percentage: float = 1,
             device: torch.device = torch.device("cpu"),
-            transforms: List[Callable] = []
+            transforms: List[Callable] = [],
+            augmentations: Callable = Identity()
     ) -> "DiffusionModelDataset":
         image_path = Path(image_path).expanduser()
         images = sorted([f.name for f in image_path.glob("*.png")])
@@ -80,7 +88,8 @@ class DiffusionModelDataset(Dataset):
             images,
             preload_percentage,
             device,
-            transforms
+            transforms,
+            augmentations=augmentations
         )
 
     def __len__(self):
@@ -88,8 +97,8 @@ class DiffusionModelDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.loaded_images[idx] is not None:
-            return self.loaded_images[idx], 0
-        return self._load_image(self.image_path.joinpath(self.images[idx])), 0
+            return self.augmentations(self.loaded_images[idx]), 0
+        return self.augmentations(self._load_image(self.image_path.joinpath(self.images[idx]))), 0
 
     def save(self, file: str):
         file = Path(file).expanduser()
