@@ -73,8 +73,8 @@ def test_prediction(model_path, image_path, label_path, out_path, config_file=".
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="../evaluation/diffusion_model/best_model.pt",
-        image_path="~/Documents/data/aml/original128png/00375.png", #00186 00048 00018 45844
-        label_path="~/Documents/data/aml/seg_mask128png/00375.png",
+        model_path="../evaluation/diffusion_model/best_model_weights.pt",
+        image_path="~/Documents/data/aml/original128png/00048.png",  # 00186 00048 00018 45844 00375
+        label_path="~/Documents/data/aml/seg_mask128png/00048.png",
         out_path="~/Documents/data/aml/out"
     )

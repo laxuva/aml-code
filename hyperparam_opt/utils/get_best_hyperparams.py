@@ -13,4 +13,4 @@ def get_best_hyperparams(intermediate_results: str):
 
 
 if __name__ == '__main__':
-    print(get_best_hyperparams("../../results/intermediate_results.json"))
+    print(get_best_hyperparams("../../evaluation/autoencoder/intermediate_results.json"))
