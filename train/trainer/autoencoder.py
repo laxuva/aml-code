@@ -25,6 +25,10 @@ class AutoencoderTrainer(TrainerBase):
 
         self.metrics_logger = MetricsLogger("train_loss", "val_loss", out_path=train_config["out_path"])
 
+        if "pretrained_model_path" in train_config:
+            self.model.load_state_dict(torch.load(train_config["pretrained_model_path"], map_location=device))
+            print("Model was loaded.")
+
     def compute_loss(self, y_pred, y, x):
         batch_size, _, w, h = x.shape
         seg_map = x[:, 3].reshape(batch_size, 1, w, h)

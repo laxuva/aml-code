@@ -112,4 +112,4 @@ def train(config: Dict[str, Any], save_output: bool = True):
 
 
 if __name__ == '__main__':
-    train(ConfigParser.read("../configs/diffusion_model.yaml"))
+    train(ConfigParser.read("../configs/autoencoder.yaml"))  # diffusion_model autoencoder
