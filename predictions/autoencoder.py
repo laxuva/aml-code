@@ -59,7 +59,7 @@ def test_prediction(model_path, image_path, seg_map_path, config_file="../config
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="C:/Users/Christoph/Documents/data/aml/models/autoencoder/best_model.pt",
+        model_path="../evaluation/autoencoder/best_model_weights.pt",
         image_path="~/Documents/data/aml/original128png/00043.png",  # 00186 00048 00018 45844 00375 00019
         seg_map_path="~/Documents/data/aml/seg_mask128png/00043.png"  # 00071 00102 00112 00116 00043
     )

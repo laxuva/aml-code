@@ -66,7 +66,7 @@ def test_prediction(model_path, image_path, out_path, config_file="../configs/di
 
 if __name__ == '__main__':
     test_prediction(
-        model_path="C:/Users/Christoph/Documents/data/aml/models/best_model.pt",
+        model_path="../evaluation/diffusion_model/best_model.pt",
         image_path="~/Documents/data/aml/original128png/28594.png",
         out_path="~/Documents/data/aml/out"
     )
