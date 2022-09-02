@@ -19,7 +19,7 @@ class BaseAugmentation(ABC):
         return img, mask
 
     @abstractmethod
-    def apply(self, img: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def apply(self, img: torch.Tensor, mask: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
         pass
 
 

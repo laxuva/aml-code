@@ -137,10 +137,7 @@ class AutoencoderDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.loaded_original_images[idx] is not None:
-            return (
-                self.augmentations(self.loaded_facemask_images[idx]),
-                self.augmentations(self.loaded_original_images[idx])
-            )
+            return self.augmentations(self.loaded_facemask_images[idx], self.loaded_original_images[idx])
 
         img = self._load_image(self.original_image_path.joinpath(self.original_images[idx]))
         seg_map = self._load_image(self.seg_map_image_path.joinpath(self.seg_map_images[idx]))
@@ -151,10 +148,7 @@ class AutoencoderDataset(Dataset):
         if self.add_seg_map_channel_to_x:
             face_mask_img = torch.cat((face_mask_img, seg_map))
 
-        return (
-            self.augmentations(face_mask_img),
-            self.augmentations(img)
-        )
+        return self.augmentations(face_mask_img, img)
 
     def save(self, file: str):
         file = Path(file).expanduser()
