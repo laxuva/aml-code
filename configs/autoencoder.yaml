@@ -1,8 +1,8 @@
 dataset.params.original_image_path: "~/Documents/data/aml/original128png"
 dataset.params.seg_map_image_path: "~/Documents/data/aml/seg_mask128png"
 dataset.params.preload_percentage: 0
-dataset.train_label: "~/Documents/data/aml/train_dataset_one_image.json"
-dataset.val_label: "~/Documents/data/aml/val_dataset_one_image.json"
+dataset.train_label: "~/Documents/data/aml/train_dataset.json"
+dataset.val_label: "~/Documents/data/aml/val_dataset.json"
 dataset.test_label: "~/Documents/data/aml/test_dataset.json"
 dataset.type: AutoencoderDataset
 
@@ -15,7 +15,7 @@ val_loader.shuffle: False
 val_loader.num_workers: 0
 
 training.max_epochs: 50
-training.learning_rate: 0.00001
+training.learning_rate: 0.001
 training.break_criterion: 50
 training.lr_scheduler.step_size: 50
 training.lr_scheduler.gamma: 0.1
