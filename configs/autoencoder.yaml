@@ -1,8 +1,8 @@
 dataset.params.original_image_path: "~/Documents/data/aml/original128png"
 dataset.params.seg_map_image_path: "~/Documents/data/aml/seg_mask128png"
 dataset.params.preload_percentage: 0
-dataset.train_label: "~/Documents/data/aml/train_dataset.json"
-dataset.val_label: "~/Documents/data/aml/val_dataset.json"
+dataset.train_label: "~/Documents/data/aml/train_dataset_one_image.json"
+dataset.val_label: "~/Documents/data/aml/val_dataset_one_image.json"
 dataset.test_label: "~/Documents/data/aml/test_dataset.json"
 dataset.type: AutoencoderDataset
 

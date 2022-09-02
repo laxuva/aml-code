@@ -12,7 +12,7 @@ class BaseAugmentation(ABC):
 
     def __call__(self, img: torch.Tensor, mask: torch.Tensor = None):
         if np.random.random() < self.p:
-            return self.apply(img)
+            return self.apply(img, mask)
 
         if mask is None:
             return img
