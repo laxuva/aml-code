@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from datasets import AutoencoderDataset
 from network.unet import UNet
+from network.unet_with_embedding import UNet as UNetWithEmbedding
 from utils.config_parser import ConfigParser
 from predictions.diffusion_model_for_masked_img import test_prediction
 
@@ -44,7 +45,8 @@ def q_q_plots_for_dataset(config_path: str, model_path: str):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    model = UNet(**config["model"]["params"])
+    model_class = UNet if config["model"]["type"] == "AutoencoderTrainer" else UNetWithEmbedding
+    model = model_class(**config["model"]["params"])
     model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
