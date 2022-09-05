@@ -3,7 +3,7 @@ dataset.params.seg_map_image_path: "~/Documents/data/aml/seg_mask128png"
 dataset.params.preload_percentage: 0
 dataset.train_label: "~/Documents/data/aml/train_dataset.json"
 dataset.val_label: "~/Documents/data/aml/val_dataset.json"
-dataset.test_label: "~/Documents/data/aml/val_dataset_small.json"
+dataset.test_label: "~/Documents/data/aml/test_dataset.json"
 dataset.type: AutoencoderDataset
 
 train_loader.batch_size: 32
@@ -21,7 +21,7 @@ training.lr_scheduler.step_size: 50
 training.lr_scheduler.gamma: 0.1
 training.out_path: "./training_results"
 training.do_augmentations: True
-#training.pretrained_model_path: "C:/Users/Christoph/Documents/data/aml/models/autoencoder/best_model.pt"
+#training.pretrained_model_path: "~/Documents/data/aml/models/autoencoder/best_model.pt"
 
 model.params.in_channels: 4
 model.params.channels_per_depth: [16, 32, 64, 128]

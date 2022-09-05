@@ -94,23 +94,30 @@ def q_q_plots_for_dataset(config_path: str, model_path: str, image_path: str, se
                 config["training"]["diffusion_steps"],
                 config["evaluation"]["harmonization_steps"],
                 diffusion_betas,
-                device
-            )[0].cpu().detach()
+                device,
+                show_tqdm=False
+            ).cpu().detach()
         else:
             raise NotImplementedError("The given model is not supported")
 
         for feature_name, calculator in feature_calculators.items():
-            features_y[feature_name].append(calculator(y[seg_mask != 0]))
-            features_y_pred[feature_name].append(calculator(y_pred[seg_mask != 0]))
+            features_y[feature_name].append(calculator(y.cpu()[seg_mask != 0]).item())
+            features_y_pred[feature_name].append(calculator(y_pred[seg_mask != 0]).item())
 
     for feature_name in feature_calculators:
         QQPlot(features_y[feature_name], features_y_pred[feature_name], feature_name).plot()
 
 
 if __name__ == '__main__':
+    # q_q_plots_for_dataset(
+    #     "../configs/autoencoder.yaml",
+    #     "../evaluation/autoencoder/best_model.pt",
+    #     "~/Documents/data/aml/original128png",
+    #     "~/Documents/data/aml/seg_mask128png"
+    # )
     q_q_plots_for_dataset(
-        "../configs/autoencoder.yaml",
-        "../evaluation/autoencoder/best_model.pt",
+        "../configs/diffusion_model.yaml",
+        "../evaluation/diffusion_model/best_model.pt",
         "~/Documents/data/aml/original128png",
         "~/Documents/data/aml/seg_mask128png"
     )

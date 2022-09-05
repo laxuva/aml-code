@@ -24,14 +24,15 @@ def test_prediction(
         U: int,
         diffusion_betas: np.ndarray,
         device: torch.device,
-        out_path: Path = None
+        out_path: Path = None,
+        show_tqdm: bool = True
 ):
     img_shape = list(img_orig.shape)
     img_new = torch.randn(img_shape).to(device)
 
     alpha_head_t_minus_one = 0
 
-    for t in tqdm(range(T)[::-1]):
+    for t in tqdm(range(T)[::-1]) if show_tqdm else range(T)[::-1]:
         alpha_head = torch.prod(1 - diffusion_betas[:t + 1]).to(device)
         alpha = 1 - diffusion_betas[t].to(device)
 

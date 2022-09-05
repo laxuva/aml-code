@@ -26,7 +26,7 @@ training.show_sampled_images: True
 training.sampled_images_location: "./training_results/sampled_images"
 training.loss_function: L1Loss  # possible values: L1Loss, MSELoss, SmoothL1Loss
 training.do_augmentations: True
-#training.pretrained_model_path: "C:/Users/Christoph/Documents/data/aml/models/best_model.pt"
+#training.pretrained_model_path: "~/Documents/data/aml/models/best_model.pt"
 
 model.params.in_channels: 3
 model.params.channels_per_depth: [64, 128, 256, 512, 1024]
