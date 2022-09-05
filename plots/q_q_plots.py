@@ -40,7 +40,7 @@ class QQPlot:
 
 
 @torch.no_grad()
-def q_q_plots_for_dataset(config_path: str, model_path: str):
+def q_q_plots_for_dataset(config_path: str, model_path: str, image_path: str, seg_map_image_path: str):
     config = ConfigParser.read(Path(config_path).expanduser())
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -53,7 +53,9 @@ def q_q_plots_for_dataset(config_path: str, model_path: str):
 
     dataset = AutoencoderDataset.load_from_label_file(
         config["dataset"]["test_label"],
-        **config["dataset"]["params"],
+        original_image_path=Path(image_path).expanduser(),
+        seg_map_image_path=Path(seg_map_image_path).expanduser(),
+        preload_percentage=config["dataset"]["params"]["preload_percentage"],
         device=device
     )
 
@@ -106,4 +108,9 @@ def q_q_plots_for_dataset(config_path: str, model_path: str):
 
 
 if __name__ == '__main__':
-    q_q_plots_for_dataset("../configs/autoencoder.yaml", "../evaluation/autoencoder/best_model.pt")
+    q_q_plots_for_dataset(
+        "../configs/autoencoder.yaml",
+        "../evaluation/autoencoder/best_model.pt",
+        "~/Documents/data/aml/original128png",
+        "~/Documents/data/aml/seg_mask128png"
+    )
