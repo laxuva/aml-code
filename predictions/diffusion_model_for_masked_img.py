@@ -50,6 +50,7 @@ def test_prediction(
                 if u < U:
                     img_new = torch.normal(torch.sqrt(1 - diffusion_betas[t]) * img_new, diffusion_betas[t]).to(device)
 
+        ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value_without_masked_original{t}.png"))
         img_new[seg_mask == 0] = img_orig[seg_mask == 0]
 
         if out_path is not None:
@@ -96,7 +97,7 @@ def test_prediction_from_files(model_path, image_path, label_path, out_path, con
 if __name__ == '__main__':
     test_prediction_from_files(
         model_path="../evaluation/diffusion_model/best_model.pt",
-        image_path="~/Documents/data/aml/original128png/00048.png",  # 00186 00048 00018 45844 00375
-        label_path="~/Documents/data/aml/seg_mask128png/00048.png",
+        image_path="~/Documents/data/aml/original128png/00018.png",  # 00186 00048 00018 45844 00375
+        label_path="~/Documents/data/aml/seg_mask128png/00018.png",
         out_path="~/Documents/data/aml/out"
     )
