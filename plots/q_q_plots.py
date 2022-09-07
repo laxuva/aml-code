@@ -26,7 +26,6 @@ class QQPlot:
 
     def plot(self, save_to: str = None):
         plt.scatter(self.features_y_pred, self.features_y)
-        plt.title(self.title)
 
         plt.plot([self.min, self.max], [self.min, self.max], "--")
 
@@ -34,7 +33,9 @@ class QQPlot:
         plt.ylabel("$y$")
 
         if save_to is not None:
-            plt.savefig(Path(save_to).expanduser())
+            plt.savefig(Path(save_to).expanduser(), bbox_inches="tight")
+        else:
+            plt.title(self.title)
 
         plt.show()
 
@@ -62,7 +63,7 @@ def q_q_plots_for_dataset(config_path: str, model_path: str, image_path: str, se
     feature_calculators = {
         "Mean": torch.mean,
         "Median": torch.median,
-        "Std": torch.std,
+        # "Std": torch.std,
         "Variance": torch.var
     }
 
@@ -74,6 +75,8 @@ def q_q_plots_for_dataset(config_path: str, model_path: str, image_path: str, se
         features_y_pred[key] = list()
 
     model.eval()
+
+    save_path = "q-q/autoencoder" if config["model"]["type"] == "AutoencoderTrainer" else "q-q/diffusion_model"
 
     for x, y in tqdm(dataset):
         seg_mask = torch.cat([x[3][None, :]] * 3, dim=0)
@@ -105,19 +108,19 @@ def q_q_plots_for_dataset(config_path: str, model_path: str, image_path: str, se
             features_y_pred[feature_name].append(calculator(y_pred[seg_mask != 0]).item())
 
     for feature_name in feature_calculators:
-        QQPlot(features_y[feature_name], features_y_pred[feature_name], feature_name).plot()
+        QQPlot(features_y[feature_name], features_y_pred[feature_name], feature_name).plot(save_to=f"{save_path}/{feature_name}.pdf")
 
 
 if __name__ == '__main__':
-    # q_q_plots_for_dataset(
-    #     "../configs/autoencoder.yaml",
-    #     "../evaluation/autoencoder/best_model.pt",
-    #     "~/Documents/data/aml/original128png",
-    #     "~/Documents/data/aml/seg_mask128png"
-    # )
     q_q_plots_for_dataset(
-        "../configs/diffusion_model.yaml",
-        "../evaluation/diffusion_model/best_model.pt",
+        "../configs/autoencoder.yaml",
+        "../evaluation/autoencoder/best_model.pt",
         "~/Documents/data/aml/original128png",
         "~/Documents/data/aml/seg_mask128png"
     )
+    # q_q_plots_for_dataset(
+    #     "../configs/diffusion_model.yaml",
+    #     "../evaluation/diffusion_model/best_model.pt",
+    #     "~/Documents/data/aml/original128png",
+    #     "~/Documents/data/aml/seg_mask128png"
+    # )
