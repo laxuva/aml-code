@@ -38,6 +38,9 @@ def test_prediction(
 
         for u in range(U):
             noise_to_reduce = model.forward(img_new, torch.tensor([t]).to(device))
+            # noise_to_print = noise_to_reduce[0] - torch.min(noise_to_reduce[0]) # beginning from 0
+            # ToPILImage()(noise_to_print / torch.max(noise_to_print[0])).save(out_path.joinpath(f"predicted_noise{t}.png"))
+
             img_new = 1 / torch.sqrt(alpha) * (
                         img_new - diffusion_betas[t] * noise_to_reduce / torch.sqrt(1 - alpha_head))
 
@@ -50,14 +53,17 @@ def test_prediction(
                 if u < U:
                     img_new = torch.normal(torch.sqrt(1 - diffusion_betas[t]) * img_new, diffusion_betas[t]).to(device)
 
-        ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value_without_masked_original{t}.png"))
-        img_new[seg_mask == 0] = img_orig[seg_mask == 0]
+        # ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value_without_masked_original{t}.png"))
+
 
         if out_path is not None:
-            ToPILImage()(torch.clip(img_new[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value{t}.png"))
+            img_for_print = img_new.clone()
+            img_for_print[seg_mask == 0] = img_orig[seg_mask == 0]
+            ToPILImage()(torch.clip(img_for_print[0], -1, 1) / 2 + 0.5).save(out_path.joinpath(f"predicted_new_value{t}.png"))
 
         alpha_head_t_minus_one = alpha_head
 
+    img_new[seg_mask == 0] = img_orig[seg_mask == 0]
     return torch.clip(img_new[0], -1, 1) / 2 + 0.5
 
 
@@ -96,8 +102,8 @@ def test_prediction_from_files(model_path, image_path, label_path, out_path, con
 
 if __name__ == '__main__':
     test_prediction_from_files(
-        model_path="../evaluation/diffusion_model/best_model.pt",
-        image_path="~/Documents/data/aml/original128png/00018.png",  # 00186 00048 00018 45844 00375
-        label_path="~/Documents/data/aml/seg_mask128png/00018.png",
+        model_path="../evaluation/diffusion_model/best_e150_w_arg.pt", # 32_l1_ep51_64-1024 best_e150_w_arg
+        image_path="~/Documents/data/aml/original128png/32254.png",  # 00186 00048 00018 45844 00375 65959
+        label_path="~/Documents/data/aml/seg_mask128png/32254.png",
         out_path="~/Documents/data/aml/out"
     )
