@@ -18,8 +18,8 @@ def plot_box_plots(hyperparams_intermediate_results: List[Dict[str, Any]], model
         for training_result in hyperparams_intermediate_results:
             used_value = training_result["hyperparameters"][hyperparam]
 
-            if isinstance(used_value, list):
-                used_value = str(used_value)
+            if hyperparam == "channels_per_depth":
+                used_value = str(sorted(used_value))
             elif hyperparam == "learning_rate":
                 used_value = 10**round(np.log10(used_value))
             elif hyperparam == "lr_scheduler_step_size":
@@ -38,6 +38,16 @@ def plot_box_plots(hyperparams_intermediate_results: List[Dict[str, Any]], model
 
         if isinstance(labels[0], float) or isinstance(labels[0], int):
             args = np.argsort(labels)
+            values = np.array(values, dtype=object)[args].tolist()
+            labels = np.array(labels)[args].tolist()
+        if hyperparam == "channels_per_depth":
+            # sort by channels first
+            args = np.argsort([int(val.replace("[", "").replace("]", "").split(", ")[0]) for val in labels])
+            values = np.array(values, dtype=object)[args].tolist()
+            labels = np.array(labels)[args].tolist()
+
+            # then sort by network depth
+            args = np.argsort([len(val.replace("[", "").replace("]", "").split(", ")) for val in labels])
             values = np.array(values, dtype=object)[args].tolist()
             labels = np.array(labels)[args].tolist()
 
